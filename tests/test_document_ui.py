@@ -50,6 +50,41 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result[0], {})
         self.assertIn('Could not start', result[-1])
 
+    def test_reader_actions_wait_for_extraction(self):
+        empty = ui.reader_availability({})
+        self.assertTrue(all(note.visible for note in empty[:2]))
+        self.assertTrue(all(not button.interactive for button in empty[2:5]))
+        self.assertFalse(empty[-1].visible)
+        events = list(ui.process_document(str(ROOT / 'tests/fixtures/text.pdf'), 'English', False, self.session))
+        available = ui.reader_availability(events[-1][0])
+        self.assertTrue(all(not note.visible for note in available[:2]))
+        self.assertTrue(all(button.interactive for button in available[2:5]))
+        self.assertIn('review it before use', available[-1].value)
+        # Clearing/replacing a document must restore the empty state.
+        cleared = ui.reader_availability(ui.select_document(None, self.session)[0])
+        self.assertTrue(cleared[0].visible)
+        self.assertFalse(cleared[4].interactive)
+
+    def test_results_do_not_claim_unreadable_pages_are_complete(self):
+        events = list(ui.process_document(str(ROOT / 'tests/fixtures/scanned.pdf'), 'English', False, self.session))
+        result = events[-1][0]
+        summary = ui.reader_availability(result)[-1].value
+        self.assertIn('No selectable text', summary)
+        self.assertIn('Warnings:', summary)
+        self.assertNotIn('Text extracted', summary)
+        # Manual correction and export remain available even when OCR is required.
+        self.assertTrue(ui.reader_availability(result)[2].interactive)
+
+    def test_source_navigation_preserves_separation(self):
+        real = app.switch_source('Your document')
+        sample = app.switch_source(app.SAMPLE_SOURCE)
+        self.assertTrue(all(group.visible for group in real[:4]))
+        self.assertTrue(all(not group.visible for group in real[4:8]))
+        self.assertTrue(all(not group.visible for group in sample[:4]))
+        self.assertTrue(all(group.visible for group in sample[4:8]))
+        self.assertEqual(real[8].selected, 'upload')
+        self.assertEqual(sample[8].selected, 'upload')
+
     def test_original_mock_workflow_unchanged(self):
         extracted = app.read_notice(app.sample_path('Clean notice'), 'Clean notice')
         self.assertEqual(len(extracted), len(app.extraction_outputs))

@@ -1,6 +1,7 @@
 """Feature 1 + 3: extract a notice from an image / PDF / text, with evidence and gaps."""
 
 import logging
+import asyncio
 import re
 from typing import Any, Dict, List, Optional, Type
 
@@ -111,6 +112,12 @@ def annotate_evidence(notice: Notice, source: Source) -> List[Dict[str, Any]]:
             item.source_ref = "image"
         elif source.kind == "text":
             item.source_ref = "pasted text"
+        elif source.kind in {"docx", "pptx", "ppt"}:
+            part = next((p for p in source.pages if quote and quote in _norm(p.text)), None)
+            if part:
+                item.source_ref = part.reference
+            elif item.source_ref not in {p.reference for p in source.pages}:
+                item.source_ref = ""
         else:
             page = next(
                 (p.number for p in source.pages if quote and quote in _norm(p.text)),
@@ -214,7 +221,8 @@ def actions_for(analysis_id: str, links: List[Dict[str, Any]], registration_url:
 # main entry points
 # --------------------------------------------------------------------------
 async def analyze_upload(filename: str, content_type: str, data: bytes, question: str = "") -> Dict[str, Any]:
-    return await _run(read_upload(filename, content_type, data), question)
+    source = await asyncio.to_thread(read_upload, filename, content_type, data)
+    return await _run(source, question)
 
 
 async def analyze_text(text: str, question: str = "") -> Dict[str, Any]:

@@ -1,3 +1,7 @@
 gradio==6.30.0
 pillow>=10
 pypdfium2>=4.30,<6
+
+python-docx>=1.2,<2
+python-pptx>=1.0.2,<2
+olefile==0.47

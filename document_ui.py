@@ -97,7 +97,7 @@ class ReaderSession:
             return self.job is job and self.generation == generation and not job.stopped
 
 
-def _clear(status='Select a PDF or notice image to start.'):
+def _clear(status='Select a PDF, image, TXT, DOCX, PPTX or PPT to start.'):
     return {}, '', [], gr.Dropdown(choices=[], value=None), '', '', None, None, status
 
 
@@ -109,13 +109,13 @@ def select_document(path, session):
         info = file_info(path)
         metadata = f"{info['fileName']} | {info['fileType']} | {info['fileSize'] / 1024:.1f} KB"
         preview = []
-        if info['fileType'] != 'application/pdf':
+        if info['fileType'].startswith('image/'):
             with Image.open(path) as image:
                 if image.width * image.height > MAX_PIXELS:
                     raise DocumentError('Image dimensions exceed the configured limit. Resize it first.')
                 image.verify()
             preview = [(str(path), 'Selected image')]
-        return {}, metadata, preview, gr.Dropdown(choices=[], value=None), '', '', None, None, 'File selected. Click Extract text to read it. PDF previews appear after extraction.'
+        return {}, metadata, preview, gr.Dropdown(choices=[], value=None), '', '', None, None, 'File selected. Click Read document for AI analysis or Extract text for local reading. PDF previews appear after extraction; Office documents have editable text previews.'
     except Exception as exc:
         message = str(exc) if isinstance(exc, DocumentError) else 'Cannot preview this image. It may be damaged; upload a fresh PNG/JPG.'
         return _clear('Upload error: ' + message)
@@ -151,7 +151,7 @@ def process_document(path, language, scans, session):
             elif event['type'] == 'result':
                 result = event['result']
                 payload = apply_page_edits(result, [p['text'] for p in result['pages']])
-                previews = [(p['previewPath'], f"Page {p['pageNumber']}") for p in result['pages']]
+                previews = [(p['previewPath'], p.get('sourceRef', f"Page {p['pageNumber']}")) for p in result['pages'] if p.get('previewPath')]
                 choices = [str(p['pageNumber']) for p in result['pages']]
                 status = f"{result['extractionStatus'].upper()} · {result['extractionMethod']} · {result['pageCount']} page(s). Review text before reuse. No model inference performed."
                 if result['warnings']:
@@ -228,12 +228,12 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
     result = gr.State({})
     with upload_tab:
         with gr.Group() as upload_panel:
-            stage_intro('Upload and preview your document', 'Choose your notice below, then click Read document. Images preview immediately; use Reading options to extract page text and preview PDFs.')
+            stage_intro('Upload and preview your document', 'Choose a document, then click Read document. Images preview immediately; Reading options provides PDF previews and editable Office text in document order.')
             with gr.Row(equal_height=True):
                 with gr.Column(scale=4, min_width=280, elem_classes=['surface']) as upload_controls:
                     upload = gr.File(label=f'Choose or drop a document · {MAX_BYTES // (1024 * 1024)} MB max',
                                      file_types=EXTENSIONS, type='filepath', height=180)
-                    gr.Markdown('PDF, PNG, JPG, WEBP, BMP, TIFF or GIF.', elem_classes=['quiet-note'])
+                    gr.Markdown('PDF · TXT · Word DOCX · PowerPoint PPTX/PPT · PNG, JPG/JPEG, WEBP, BMP, TIFF, GIF. Legacy PPT requires local LibreOffice.', elem_classes=['quiet-note'])
                     metadata = gr.Textbox(label='Selected file', placeholder='No file selected yet.', interactive=False)
                     with gr.Accordion('Reading options', open=False):
                         language = gr.Dropdown(list(LANGUAGES), value='English', label='OCR language')
@@ -246,7 +246,7 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
                 with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
                     gr.Markdown('### Document preview')
                     previews = gr.Gallery(label='Pages in document order', columns=2, height=400, interactive=False)
-                    gr.Markdown('**Nothing to preview yet?** Select an image, or select a PDF and click Extract text. Return here to check its pages after reading.', elem_classes=['quiet-note'])
+                    gr.Markdown('Select an image for an immediate preview or extract a PDF to preview its pages. For DOCX, PPTX, PPT and TXT, use the editable text preview on Review; slide and paragraph references stay in order.', elem_classes=['quiet-note'])
     with review_tab:
         with gr.Group() as review_panel:
             with gr.Accordion('Page text and OCR corrections', open=False):
@@ -288,7 +288,7 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
                         download = gr.File(label='Document JSON', interactive=False)
                         edit_again = gr.Button('← Return to review')
     with gr.Group() as status_panel:
-        status = gr.Textbox(label='Document reading status', value='Step 1: choose a PDF or image on Upload, then click Extract text.', lines=2, interactive=False, elem_classes=['workflow-status'])
+        status = gr.Textbox(label='Document reading status', value='Step 1: choose a document on Upload, then click Read document or Extract text.', lines=2, interactive=False, elem_classes=['workflow-status'])
     outputs = [result, metadata, previews, page, editor, combined, payload, download, status]
     read_event = run.click(process_document, [upload, language, scans, session], outputs,
                            concurrency_limit=2, trigger_mode='once')

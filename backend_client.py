@@ -13,7 +13,7 @@ API_URL = os.environ.get('DEADLENSE_API_URL', os.environ.get('NOTICEBRIDGE_API_U
 API_TIMEOUT = float(os.environ.get('DEADLENSE_API_TIMEOUT', os.environ.get('NOTICEBRIDGE_API_TIMEOUT', '900')))
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TEXT = 90000
-EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff', '.gif', '.txt'}
+EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff', '.gif', '.txt', '.docx', '.pptx', '.ppt'}
 
 
 class BackendError(ValueError):
@@ -85,7 +85,7 @@ class BackendClient:
         if path:
             file = Path(path)
             if file.suffix.lower() not in EXTENSIONS:
-                raise BackendError('Unsupported file format. Choose PDF, an image, or TXT.')
+                raise BackendError('Unsupported file format. Choose PDF, an image, TXT, DOCX, PPTX or PPT.')
             if not file.is_file() or not 0 < file.stat().st_size <= MAX_BYTES:
                 raise BackendError('File is empty, missing, or larger than 20 MB.')
             with file.open('rb') as stream:

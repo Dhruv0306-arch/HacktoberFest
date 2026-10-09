@@ -45,8 +45,8 @@ On macOS/Linux, activate your environment and use `python -m pip install -r requ
 
 ## Real workflow
 
-1. Choose **Your document**. Upload a PDF/image, or expand **Or paste notice text**.
-2. For an image or text PDF, click **Analyze uploaded notice with Gemma**. Images go directly to the local model; PDFs use their selectable text. You can also use **Extract text** for page previews and local OCR first.
+1. Choose **Your document**. Upload a PDF, image, TXT, DOCX, PPTX or PPT, or expand **Or paste notice text**.
+2. For an image or text PDF, click **Read document**. Images go directly to the local model; PDFs use their selectable text. You can also use **Extract text** for page previews and local OCR first.
 3. For scanned PDFs, enable **OCR PDF pages without selectable text**, click **Extract text**, review and save every page, then click **Analyze saved text with Gemma**. Missing PDF text produces an explicit OCR instruction, not guessed model facts.
 4. On **Review**, inspect title, issuer, summary, audience, dates, fees, required/optional documents, actions, contacts, links, and uncertainties. Tables retain multiple dates and original source references. Leave unknown dates blank.
 5. Compare original evidence with the document. `verified=true` means a quote was found in the text, not that the model's interpretation is correct. Image quotes cannot be automatically verified. Evidence remains labelled as original extraction evidence after corrections.
@@ -115,3 +115,21 @@ Integration tests start a real FastAPI HTTP server and replace **only model infe
 Live Gemma inference, Hindi output quality, and a visual browser inspection were not verified in the integration environment. No Ollama instance was listening there. Test one real notice on your laptop before presenting the demo. Human review reduces errors but does not establish model accuracy; unresolved details remain visible rather than becoming invented deadlines or contacts.
 
 Existing `NOTICEBRIDGE_*` environment settings remain supported for compatibility. When both names are set, `DEADLENSE_*` takes precedence.
+
+## Word and PowerPoint uploads
+
+DOCX paragraphs and tables are read in document order. PPTX slides, text boxes, grouped text and tables are read in slide order with `slide N` source references. Word references use `paragraph N` and `table N`, not invented page numbers. These uploads follow the same review, confirmation, checklist and calendar flow as PDFs. TXT can also be uploaded through the file picker.
+
+Install both requirement files after applying this update:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements-ui.txt -r requirements.txt
+```
+
+Legacy `.ppt` additionally requires **LibreOffice**, installed locally on the computer running the app. Windows installs are detected under Program Files; otherwise set `LIBREOFFICE_CMD` to the full path of `soffice.exe`. If LibreOffice is unavailable, save the presentation as `.pptx` in PowerPoint. No online conversion service is used.
+
+Limits: UI uploads 20 MB; presentations 30 slides; backend text 90,000 characters. Modern Office ZIP expansion is bounded to 100 MB and 5,000 parts; macros and XML entity declarations are rejected. Legacy PPT is checked as an OLE PowerPoint file, rejects VBA streams, then converts in an isolated temporary LibreOffice profile with macros disabled, a 60-second timeout, and automatic temporary-file cleanup. Embedded objects are not executed.
+
+Office previews show editable extracted text rather than a rendered slide/page image. Text within images, charts, headers, footnotes and speaker notes is not read by the Office parser. Image-only content should be exported as PDF and read with the existing OCR options. Empty slides stay in sequence and are explicitly flagged; documents with no readable text fail without calling the model.
+
+Verification: `python -m unittest discover -s tests -q` and `python scripts/integration_smoke.py`. Integration tests exercise real parsing and real HTTP services with controlled model responses; they do not prove live Gemma accuracy.

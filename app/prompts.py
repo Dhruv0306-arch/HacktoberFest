@@ -7,7 +7,8 @@ Hard rules:
 2. Every important field (title, dates, venue, eligibility, fees, documents, contacts, links)
    needs an entry in `evidence`: a SHORT VERBATIM quote copied character-for-character from
    the notice, with its `source_ref` ("page N" for PDFs, "image" for a photo/screenshot,
-   "pasted text" for raw text). If the notice is a PDF, every `source_ref` must be the
+   "pasted text" for raw text, "slide N" for PowerPoint, and the bracketed
+   "paragraph N" or "table N" references for Word documents). If the notice is a PDF, every `source_ref` must be the
    page number written as `page N` - never "pasted text".
    When the notice is an IMAGE you must still quote the words you can read in the picture
    (that is how claims are checked later) - `evidence` is never empty for an image either.

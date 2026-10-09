@@ -49,7 +49,7 @@ def render_markdown(record: Dict[str, Any]) -> str:
         "",
     ]
     for step in checklist.get("steps", []):
-        tag = "Required" if step.get("required") else "Optional"
+        tag = ("Required" if step.get("required") else "Optional") if step.get("_requirement_known", True) else "Not classified"
         detail = f" - {step['detail']}" if step.get("detail") else ""
         src = f" _({step['source_ref']})_" if step.get("source_ref") else ""
         lines.append(f"{step.get('order', 0)}. [ ] **({tag})** {step.get('step', '')}{detail}{src}")

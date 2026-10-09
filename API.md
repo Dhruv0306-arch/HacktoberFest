@@ -105,3 +105,37 @@ fixtures/               generated test notices (txt / png / pdf)
   restart. It's per-process, single-user demo storage — swap for a real DB if this grows.
 - **Model latency**: ~70-250 s per extraction on an M2 (6.6 GB model, ~10 tok/s). Prompt budget
   (≤8 evidence quotes, short details) and `OLLAMA_THINK=false` keep it at the low end.
+
+## UI integration (October 2026)
+
+The Gradio UI now uses these existing routes through `backend_client.py`:
+
+| Route | UI use |
+|---|---|
+| `GET /api/health` | Backend/model readiness |
+| `POST /api/analyze` | Multipart image/PDF or form `text`, with a language request in `question` |
+| `PATCH /api/analyses/{id}` | Full reviewed Notice object, before plan generation |
+| `POST /api/analyses/{id}/checklist` | Fresh checklist; `hint` requests English/Hindi |
+| `GET /api/analyses/{id}/checklist.md` | Checklist download |
+| `POST /api/enrich` | Directory match using `analysis_id`; sample provenance remains visible |
+| `POST /api/calendar/preview` | Review parseable dates, warnings and omissions |
+| `POST /api/calendar/ics` | Export with `analysis_id` and boolean `confirmed: true` |
+
+The backend has no dedicated fact-confirmation endpoint. The UI review checkbox gates
+PATCH + checklist regeneration; it is not presented as a separate server confirmation contract.
+Original extraction evidence remains original evidence after user corrections.
+
+Compatible validation changes: correction payloads are checked against Notice types before
+mutating records; unsupported/empty/corrupt uploads and password-protected PDFs are rejected;
+PDFs with missing text layers return instructions to use the existing local OCR workflow.
+Direct images are decoded/validated and converted to PNG, with a pixel limit. Oversized uploads
+are bounded before inference. No changes were made to the successful response schema.
+
+Calendar export now requires JSON boolean `true`, rejects impossible dates, and uses the next
+calendar day as the exclusive end for single-day events. Download filenames are ASCII-safe,
+including when a Hindi notice title is supplied. CORS defaults to local UI origins and is
+configurable through `DEADLENSE_CORS_ORIGINS`.
+
+The supplied `data/directory.json` is fictional demo campus data. Its timestamps are supplied
+metadata, not independent verification. Hindi is requested through existing prompt fields;
+there is no separate translation service or verified Hindi quality guarantee.

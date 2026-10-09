@@ -33,6 +33,7 @@ def get_client() -> httpx.AsyncClient:
     if _client is None or _client.is_closed:
         _client = httpx.AsyncClient(
             base_url=OLLAMA_HOST,
+            trust_env=False,
             timeout=httpx.Timeout(REQUEST_TIMEOUT, connect=5.0),
         )
     return _client
@@ -54,7 +55,7 @@ async def ping() -> Dict[str, Any]:
         return {"ok": False, "model": OLLAMA_MODEL, "detail": f"ollama unreachable: {exc}"}
 
     names = [m.get("name", "") for m in resp.json().get("models", [])]
-    present = any(n == OLLAMA_MODEL or n.split(":")[0] == OLLAMA_MODEL.split(":")[0] for n in names)
+    present = any(n == OLLAMA_MODEL or (":" not in OLLAMA_MODEL and n == OLLAMA_MODEL + ":latest") for n in names)
     return {
         "ok": present,
         "model": OLLAMA_MODEL,
@@ -131,10 +132,19 @@ async def structured(
     """Run a chat turn constrained to `schema`, with graceful degradation."""
     try:
         return _parse(await chat(messages, temperature=temperature, num_predict=num_predict, fmt=schema, timeout=timeout))
+    except OllamaUnavailable:
+        raise
     except (OllamaError, ValueError) as exc:
         log.warning("schema-constrained call failed (%s); falling back to json mode", exc)
 
-    fallback_messages = list(messages)
+    # JSON mode does not itself supply the field names or nested types.
+    # Preserve the schema contract even when schema-constrained decoding fails.
+    fallback_messages = [dict(message) for message in messages]
+    contract = "\n\nReturn exactly the JSON structure described by this schema. Include all properties, using empty strings/lists for absent values. Dates, fees and actions must be objects in their named arrays, not just mentioned in prose.\n" + json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+    if fallback_messages and fallback_messages[0].get("role") == "system":
+        fallback_messages[0]["content"] += contract
+    else:
+        fallback_messages.insert(0, {"role": "system", "content": contract})
     try:
         return _parse(
             await chat(

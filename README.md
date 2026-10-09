@@ -1,147 +1,117 @@
-# NoticeBridge
+# DeadLense
 
 Read it. Verify it. Act on it.
 
-Buildathon PS 1 prototype: community notice image -> reviewed facts -> explanation, checklist and optional calendar file.
+A local Gradio UI connected to Utkarsh's FastAPI backend and Ollama (`gemma4:e4b`). Upload a notice, review its extracted facts and source evidence, confirm corrections, and generate an action checklist. The saved sample walkthrough remains explicitly separate.
 
-## Run on Windows (PowerShell)
+## Start on Windows / PowerShell
 
-Python 3.10+ and an existing `venv` are required. If needed, create it with `py -m venv venv`.
+Use Python 3.10+; integration was tested with Python 3.12. From the repository root, check the branch without changing it:
 
 ```powershell
-.\venv\Scripts\python.exe -m pip install -r requirements-ui.txt
-$env:NOTICEBRIDGE_MODE = "demo"
+git branch --show-current
+```
+
+It should print `dhruv-ui`. Keep your current branch and uncommitted work.
+
+Install **both** sets of requirements into the same environment. If you already use `venv`, keep it:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements-ui.txt -r requirements.txt
+```
+
+If you do not have a virtual environment, first run `py -m venv venv`.
+
+Terminal 1 — backend (leave running):
+
+```powershell
+$env:OLLAMA_HOST = "http://127.0.0.1:11434"
+$env:OLLAMA_MODEL = "gemma4:e4b"
+.\venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Terminal 2 — frontend (from the same project folder):
+
+```powershell
+$env:DEADLENSE_API_URL = "http://127.0.0.1:8000"
 .\venv\Scripts\python.exe app.py
 ```
 
-Open the local URL printed in the terminal. Ctrl+C stops the app.
+Open http://127.0.0.1:7860. Backend API docs: http://127.0.0.1:8000/docs.
 
-## Demo versus live
+Keep your already-installed Ollama service running. `ollama list` should contain the exact `gemma4:e4b` tag. Use **Check backend connection** in the UI. No `model.py` is required: the supplied backend is the `app/` package, while root `app.py` is the UI launcher. Do not run `python -m app`.
 
-Demo mode deliberately uses labelled, saved synthetic fixtures. It does not read or translate images. Select either clean or unclear-deadline sample. Demo output is English only. All demo calendar exports have a DEMO prefix.
+On macOS/Linux, activate your environment and use `python -m pip install -r requirements-ui.txt -r requirements.txt`, `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000`, and `python app.py` in separate terminals. `run.sh` remains the backend-only helper supplied by Utkarsh.
 
-For live mode, place Utkarsh's `model.py` and its supporting files beside `app.py`. Install his backend dependencies. His functions must be synchronous and return Python dictionaries:
+## Real workflow
 
-```python
-extract_notice(image_path: str) -> dict
-build_guidance(confirmed_fields: dict, language: str) -> dict
-```
+1. Choose **Your document**. Upload a PDF/image, or expand **Or paste notice text**.
+2. For an image or text PDF, click **Analyze uploaded notice with Gemma**. Images go directly to the local model; PDFs use their selectable text. You can also use **Extract text** for page previews and local OCR first.
+3. For scanned PDFs, enable **OCR PDF pages without selectable text**, click **Extract text**, review and save every page, then click **Analyze saved text with Gemma**. Missing PDF text produces an explicit OCR instruction, not guessed model facts.
+4. On **Review**, inspect title, issuer, summary, audience, dates, fees, required/optional documents, actions, contacts, links, and uncertainties. Tables retain multiple dates and original source references. Leave unknown dates blank.
+5. Compare original evidence with the document. `verified=true` means a quote was found in the text, not that the model's interpretation is correct. Image quotes cannot be automatically verified. Evidence remains labelled as original extraction evidence after corrections.
+6. Check the review box, then **Confirm facts & generate action plan**. The UI PATCHes corrected facts to the existing analysis and requests a fresh checklist from those stored facts. It never presents the initial draft checklist as a confirmed plan.
+7. On **Results**, tick required/optional actions, download the plain-text checklist, and optionally preview dates. Calendar download requires a second, explicit date confirmation. Blank or invalid dates are omitted with warnings; all-day end dates are exclusive.
+8. Directory matches include source metadata and last-checked timestamps. **The bundled campus directory is fictional demo data, not a verified official directory.** Replace `data/directory.json` with checked information before using it for real recommendations. The sample's separate `helplines.csv` remains header-only until you add verified entries.
 
-Extraction fields: see `samples/demo_notice.json`. Scalar fields accept text or null. List fields accept lists of strings. `build_guidance` returns `{"explanation": "...", "checklist": ["..."]}`. Use only corrected facts, preserve dates/currency/names, and retain unresolved items. The adapter is the only file to change if his function names differ.
+Edits and replacements invalidate previous results and late model responses. Model requests are serialized, with duplicate submissions limited. Replacing input discards its pending result but does not cancel computation already running in Ollama. Use smaller documents if inference times out. The reader's existing Cancel button stops local OCR separately.
 
-```powershell
-$env:NOTICEBRIDGE_MODE = "live"
-.\venv\Scripts\python.exe app.py
-```
+## Demo mode remains available
 
-Live failures are displayed; they never silently fall back to fixtures. Live languages are options to test, not verified quality claims. Offline capability depends on the full backend and dependencies; test with network disconnected before claiming it.
+Choose **Demo sample** to use `samples/demo_notice.json` and the clean/unclear synthetic images. This workflow is English-only and produces labelled demo files. It never runs automatically when real processing fails. The legacy `DEADLENSE_MODE` variable no longer controls real inference: real processing always uses **Your document**, and samples always remain samples.
 
-## Ownership
+## Local OCR (optional)
 
-- Dhruv: app.py, ui_adapter.py, ui_utils.py, requirements-ui.txt, samples, helplines.csv, README.
-- Utkarsh: model.py, schemas, inference configuration and backend dependencies.
+The frontend's existing document reader uses PDFium and Tesseract. Selectable PDF text and direct Gemma image analysis do not require Tesseract. Image OCR and scanned-PDF OCR do.
 
-## Verified resources
-
-`helplines.csv` is intentionally header-only. Add only manually verified official resources, including exact category, region, HTTPS URL and verification date (YYYY-MM-DD). Leave unavailable phone numbers blank. Lookup requires exact category and explicit region; it never guesses a helpline. Presence of a date is not automatic verification.
-
-## Demo walkthrough
-
-1. Read the clean synthetic notice and compare source excerpts with the image.
-2. Confirm the details and date, generate a plan and download its TXT and all-day ICS.
-3. Change the amount; the old plan clears and confirmation resets. Generate again and check the updated amount.
-4. Select the unclear-deadline sample. It must show missing date and unresolved information; calendar export remains unavailable.
-5. Repeat with actual image inference in live mode before submission. Do not present fixture playback as AI extraction.
-
-## Limits
-
-The original model/demo workflow accepts images only; the independent document reader below additionally accepts PDFs. No automatic form submission, payment or message sending. Source excerpts are model outputs and should be compared with the original. Human confirmation records review, not a guarantee of accuracy. Checklist progress is session-only. Calendar files require a valid verified date and no remaining unclear items. Dates are all-day events, with no inferred time zone or time. Exports are stored under ignored `outputs/`; delete after the demo when no longer needed. No real helplines are bundled.
-
-## Real document reader (works even in demo mode)
-
-Choose **Your document** to read actual files, or **Demo sample** to explore the saved notice-to-action workflow. Both use the shared **Upload -> Review -> Results** navigation. Their data and processing remain separate. The reader never calls `ui_adapter.py`, `model.py`, an OCR website or a prediction API. File bytes travel from the browser to this Python application, which is localhost by default; this is local-host processing, not browser-only processing. Do not enable public hosting for sensitive documents without designing appropriate access controls.
-
-### Install / launch on Windows
+On Windows, install Tesseract if needed:
 
 ```powershell
-.\venv\Scripts\python.exe -m pip install -r requirements-ui.txt
 winget install --exact --id UB-Mannheim.TesseractOCR
-$env:NOTICEBRIDGE_MODE = "demo"
-.\venv\Scripts\python.exe app.py
 ```
 
-Tesseract is only needed for image OCR and optional scanned-PDF OCR. Text-based PDFs and their previews work without it. If winget is unavailable, follow the Windows installer link in the [official Tesseract instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html). The app checks PATH and common Windows installation directories. For a custom location:
+Restart your terminal so PATH updates take effect, or configure `TESSERACT_CMD` to the installed executable. Install the relevant Tesseract language data for Hindi/Kannada OCR. A missing language pack produces an error rather than fake OCR text. These OCR language choices are separate from the model's requested English/Hindi output language.
 
-```powershell
-$env:TESSERACT_CMD = "C:\Program Files\Tesseract-OCR\tesseract.exe"
-& $env:TESSERACT_CMD --list-langs
-.\venv\Scripts\python.exe app.py
-```
+## Configuration
 
-English requires `eng` data. Hindi + English requires `hin` and `eng`; Kannada + English requires `kan` and `eng`. Install language packs separately in Tesseract's tessdata directory; the app never downloads language packs or uploads documents automatically. OCR supports printed text best; multilingual quality needs local testing.
+Environment variables are read by the relevant Python process. `.env.example` documents defaults; `.env` is not loaded automatically by `python app.py`.
 
-### Use
+| Variable | Default | Purpose |
+|---|---|---|
+| `DEADLENSE_API_URL` | `http://127.0.0.1:8000` | Frontend's backend address |
+| `DEADLENSE_API_TIMEOUT` | `900` seconds | Frontend HTTP read timeout |
+| `OLLAMA_HOST` | `http://127.0.0.1:11434` | Backend model server |
+| `OLLAMA_MODEL` | `gemma4:e4b` | Exact installed model tag |
+| `OLLAMA_TIMEOUT` | See `app/config.py` | Backend inference timeout; retain supplied defaults unless needed |
+| `APP_DATA_DIR` | `data/` | Backend directory and saved analysis location |
+| `DEADLENSE_CORS_ORIGINS` | localhost ports 7860 | Comma-separated allowed browser origins |
 
-1. Choose **Your document**, then drag/drop or select a PDF, PNG, JPG/JPEG, WEBP, BMP, TIFF or GIF on **Upload**. Filename, MIME type and size appear immediately. Images preview immediately; PDF page previews appear after reading.
-2. Open **Reading options** to select an installed OCR language or enable OCR for PDF pages without selectable text. Text PDFs use the text layer without OCR by default.
-3. Click **Extract text**. Progress reports completed PDF pages and OCR stages; it does not fabricate Tesseract recognition percentages. A completed reading opens **Review** automatically.
-4. Select a page, correct its text, and click **Save page corrections** before changing pages. **Save page & view results** saves the current page and opens **Results**.
-5. Review the combined text and JSON on **Results** and prepare the JSON download for future integration. No model predictions are generated from this text yet. Choose **Demo sample** to explore example action plans independently.
-6. Cancel stops the reader process and its OCR child process. Removing/replacing a file cancels pending work and clears prior reader output. The mock output panel is unaffected.
+Gradio makes server-side HTTP requests, so its integration does not need browser cross-origin requests. Both services bind to loopback in the commands above. Documents are not sent to an external OCR service. Changing either host to a remote service changes where content is sent; configure this deliberately.
 
-### Integration boundary
+Files are limited to 20 MB at the frontend (backend 25 MB), PDFs to 30 pages, images to 25 million pixels, and backend text to 90,000 characters. Large or unsupported inputs produce errors. Multi-frame images must be split before direct model analysis. Local reader JSON keeps original text, edits, page order and extraction status. Backend analyses are saved in ignored `data/analyses/`; exports/reader artifacts live in ignored `outputs/`. These local files persist until you remove them. No authentication or production hosting is included.
 
-`document_reader.py` is independent of Gradio and model inference:
+## Architecture and ownership
 
-```python
-from document_reader import read_document, apply_page_edits
+- Dhruv's UI: `app.py`, `ui_style.py`, `document_ui.py`, `model_ui.py`.
+- Local file reading/OCR: `document_reader.py`.
+- Real backend HTTP adapter: `backend_client.py`, preserving Utkarsh's nested Notice schema.
+- Utkarsh's backend: `app/main.py`, `app/ingest.py`, `app/ollama_client.py`, `app/schemas.py`, `app/services/`, `app/store.py`.
+- Saved sample adapter: `ui_adapter.py`; sample exports/resources: `ui_utils.py`.
 
-result = read_document(image_or_pdf_path, temporary_work_directory,
-                       language="eng", ocr_scans=False)
-payload = apply_page_edits(result, corrected_text_for_each_page)
-# Future integration may consume payload; no API is assumed or called today.
-```
+API contracts and the integration changes are documented in `API.md` and `INTEGRATION_REPORT.md`.
 
-PDFium is not thread-safe: call `read_document` in a separate process when processing concurrent requests. `document_ui.py` already does this and handles cancellation/timeouts.
-
-Payload fields: `fileName`, `fileType`, `fileSize`, `schemaVersion`, `pageCount`, `pages`, `extractedText`, `extractionMethod`, `extractionStatus`, `hasReadableText`, `warnings`, `edited`, `reviewStatus`, `modelInferencePerformed`.
-
-Each page retains `pageNumber`, `originalText`, editable `text`, `extractionMethod`, `extractionStatus`, and `edited`. Downloaded JSON excludes internal preview paths. Original extraction status remains unchanged after manual edits, so manual transcription never masquerades as successful OCR. `hasReadableText` reflects current edited content. Model inference is always explicitly false.
-
-### Limits and storage
-
-Defaults are configurable through environment variables before starting the app:
-
-| Variable | Default |
-| --- | --- |
-| `NOTICEBRIDGE_MAX_FILE_MB` | 20 MB |
-| `NOTICEBRIDGE_MAX_PAGES` | 30 pages |
-| `NOTICEBRIDGE_MAX_IMAGE_PIXELS` | 25,000,000 pixels |
-| `NOTICEBRIDGE_MAX_TEXT_CHARS` | 500,000 characters |
-| `NOTICEBRIDGE_OCR_TIMEOUT` | 60 seconds per image/page |
-| `NOTICEBRIDGE_READ_TIMEOUT` | 180 seconds per document |
-
-Oversized files, zero-byte files, corrupt documents, protected PDFs and unsupported formats report errors. Upload an authorized unlocked copy of protected PDFs. A page with no readable text is marked `ocr_required` or `no_text`, never success. Mixed PDFs may return `partial` with page-level warnings. Blank pages may also be flagged as needing OCR because text visibility cannot be inferred reliably from an empty text layer. Only the first frame of animated GIF/multipage TIFF is processed, with a warning. Complex columns/tables can have imperfect reading order within a page, while page order is preserved. No handwriting or OCR accuracy guarantee. PDF render dimensions are bounded to control memory.
-
-Temporary previews/OCR files live under `outputs/document-reader/`; replacing/removing/cancelling the document cleans its work directory. Reader session state expires after one hour. Explicit JSON downloads live under `outputs/document-reader-exports/` until you delete them. Gradio also maintains its normal upload/download cache. Existing `outputs/` files are not modified or deleted by this update.
-
-### Checks
+## Verification
 
 ```powershell
 .\venv\Scripts\python.exe -m unittest discover -s tests -v
-.\venv\Scripts\python.exe -m compileall -q app.py ui_adapter.py ui_utils.py document_reader.py document_ui.py tests
+.\venv\Scripts\python.exe scripts/unit_test.py
+.\venv\Scripts\python.exe scripts/integration_smoke.py
+.\venv\Scripts\python.exe -m compileall -q app.py backend_client.py model_ui.py document_ui.py app
+.\venv\Scripts\python.exe -m pip check
 ```
 
-Tests include real PDF text extraction, multi-page order, scanned/blank/protected PDFs, actual image and scanned-PDF OCR, invalid/empty/oversized files, edit provenance, cancellation/replacement and the original mock checklist/calendar workflow. OCR tests are skipped if Tesseract is unavailable. The small fixtures are synthetic; `protected.pdf` uses password `test-password`. The existing project has no lint, static type-check or frontend build configuration.
+Integration tests start a real FastAPI HTTP server and replace **only model inference** with explicit test fixtures. The smoke test starts the real Gradio UI and drives its upload/review/confirmation/download APIs over HTTP. Test fixtures never enter production request handling. Existing reader tests exercise real Tesseract OCR when installed.
 
-Implementation references: [PDFium Python API and process-safety guidance](https://pypdfium2.readthedocs.io/en/stable/python_api.html), [Tesseract CLI](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html).
+Live Gemma inference, Hindi output quality, and a visual browser inspection were not verified in the integration environment. No Ollama instance was listening there. Test one real notice on your laptop before presenting the demo. Human review reduces errors but does not establish model accuracy; unresolved details remain visible rather than becoming invented deadlines or contacts.
 
-## Unified interface
-
-`app.py` defines the product shell, source selector, shared three-stage navigation and existing notice-to-action controls. `document_ui.py` places the document-reader controls into the same stages without changing extraction. `ui_style.py` owns the shared theme, responsive CSS and stage headings. No new runtime dependency was added for this layout refactor.
-
-All original sample fields, source excerpts, language options, confirmation checks, resource matching, checklist toggles, TXT/ICS downloads and live-adapter hooks remain available. Source switching resets navigation to Upload while preserving each source's independent state. Automatic navigation after extraction is guarded by the currently selected source. With `NOTICEBRIDGE_MODE=live`, the second source is labelled **Model workflow**, and still runs only after the user explicitly starts it.
-
-Review and Results include instructions when no document has been extracted. Page saving, continuing and JSON export become available only after extraction returns a document, including documents that need OCR or manual transcription. The results summary reports extraction status and warnings without claiming that user review is complete. Uploaded text and saved demo action plans are explicitly labelled as separate sources. On Review, **Save page & view results** saves the current page before moving to Results.
-
-If Windows UI tests cannot find `taskkill`, ensure `$env:SystemRoot\System32` is on PATH before running the checks above.
+Existing `NOTICEBRIDGE_*` environment settings remain supported for compatibility. When both names are set, `DEADLENSE_*` takes precedence.

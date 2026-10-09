@@ -54,7 +54,7 @@ def export_plan(fields, guidance, allow_calendar=False, mode='demo'):
     folder = BASE / 'outputs' / uuid4().hex
     folder.mkdir(parents=True)
     title = fields.get('title') or 'Notice action plan'
-    body = [f'NoticeBridge | {mode.upper()} MODE', title, '', 'CONFIRMED DETAILS']
+    body = [f'DeadLense | {mode.upper()} MODE', title, '', 'CONFIRMED DETAILS']
     for key in ['issuer', 'deadline', 'deadline_original', 'amount']:
         body.append(f"{key}: {fields.get(key) or 'Not supplied / not confirmed'}")
     body += ['', guidance['explanation'], '', 'CHECKLIST']
@@ -66,8 +66,8 @@ def export_plan(fields, guidance, allow_calendar=False, mode='demo'):
     files = [str(text_path)]
     deadline = parse_deadline(fields.get('deadline'))
     if allow_calendar and deadline and not fields.get('unclear_fields'):
-        lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NoticeBridge//EN', 'CALSCALE:GREGORIAN',
-                 'BEGIN:VEVENT', f'UID:{uuid4().hex}@noticebridge.local',
+        lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//DeadLense//EN', 'CALSCALE:GREGORIAN',
+                 'BEGIN:VEVENT', f'UID:{uuid4().hex}@deadlense.local',
                  'DTSTAMP:' + datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ'),
                  'DTSTART;VALUE=DATE:' + deadline.strftime('%Y%m%d'),
                  'DTEND;VALUE=DATE:' + (deadline + timedelta(days=1)).strftime('%Y%m%d'),

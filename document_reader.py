@@ -21,7 +21,7 @@ import pypdfium2 as pdfium
 
 def _limit(name, default):
     try:
-        value = int(os.environ.get(name, default))
+        value = int(os.environ.get(name.replace('NOTICEBRIDGE_', 'DEADLENSE_'), os.environ.get(name, default)))
         return value if value > 0 else default
     except ValueError:
         return default

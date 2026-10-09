@@ -228,9 +228,9 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
     result = gr.State({})
     with upload_tab:
         with gr.Group() as upload_panel:
-            stage_intro('Upload and preview your document', 'Choose a file below, then click Extract text. Images preview immediately; PDF previews are created during extraction.')
+            stage_intro('Upload and preview your document', 'Choose your notice below, then click Read document. Images preview immediately; use Reading options to extract page text and preview PDFs.')
             with gr.Row(equal_height=True):
-                with gr.Column(scale=4, min_width=280, elem_classes=['surface']):
+                with gr.Column(scale=4, min_width=280, elem_classes=['surface']) as upload_controls:
                     upload = gr.File(label=f'Choose or drop a document · {MAX_BYTES // (1024 * 1024)} MB max',
                                      file_types=EXTENSIONS, type='filepath', height=180)
                     gr.Markdown('PDF, PNG, JPG, WEBP, BMP, TIFF or GIF.', elem_classes=['quiet-note'])
@@ -239,52 +239,54 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
                         language = gr.Dropdown(list(LANGUAGES), value='English', label='OCR language')
                         scans = gr.Checkbox(label='OCR PDF pages without selectable text', value=False)
                         gr.Markdown('Image OCR needs local Tesseract and the selected language packs. Text PDFs work without OCR.', elem_classes=['quiet-note'])
-                    run = gr.Button('Extract text →', variant='primary')
-                    with gr.Row():
-                        stop = gr.Button('Cancel reading', size='sm')
-                        remove = gr.Button('Remove file', size='sm')
+                        run = gr.Button('Extract text →')
+                        with gr.Row():
+                            stop = gr.Button('Cancel reading', size='sm')
+                            remove = gr.Button('Remove file', size='sm')
                 with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
                     gr.Markdown('### Document preview')
                     previews = gr.Gallery(label='Pages in document order', columns=2, height=400, interactive=False)
                     gr.Markdown('**Nothing to preview yet?** Select an image, or select a PDF and click Extract text. Return here to check its pages after reading.', elem_classes=['quiet-note'])
     with review_tab:
         with gr.Group() as review_panel:
-            stage_intro('Review the extracted text', 'Compare each page with the preview on Upload. Correct any mistakes, save before changing pages, then continue to Results.')
-            review_empty = gr.Markdown('**No extracted text yet.** Go to Upload, select a document, and click **Extract text**. Then review each page here.', elem_classes=['empty-state'])
-            with gr.Row():
-                with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
-                    page = gr.Dropdown(choices=[], label='Page to review', interactive=True)
-                    editor = gr.Textbox(label='Editable page text', lines=14, interactive=True,
-                                        placeholder='Extract a document on Upload to see its page text here.', elem_classes=['document-text'])
-                    save = gr.Button('Save page corrections', interactive=False)
-                    gr.Markdown('Save before switching pages. Continue also saves the current page.', elem_classes=['quiet-note'])
-                with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
-                    gr.Markdown('### All pages at a glance')
-                    combined = gr.Textbox(label='Saved document text', lines=14, interactive=False,
-                                          placeholder='Text from all pages appears after extraction. Saved corrections appear here too.', elem_classes=['document-text'])
-                    gr.Markdown('Page boundaries stay intact. Empty pages are flagged rather than filled with guessed text.', elem_classes=['quiet-note'])
-            with gr.Row():
-                back = gr.Button('← Back to upload')
-                ready = gr.Button('Save page & view results →', variant='primary', interactive=False)
+            with gr.Accordion('Page text and OCR corrections', open=False):
+                stage_intro('Review the extracted text', 'Compare each page with the preview on Upload. Correct any mistakes, save before changing pages, then continue to Results.')
+                review_empty = gr.Markdown('**No extracted text yet.** Go to Upload, select a document, and click **Extract text**. Then review each page here.', elem_classes=['empty-state'])
+                with gr.Row():
+                    with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
+                        page = gr.Dropdown(choices=[], label='Page to review', interactive=True)
+                        editor = gr.Textbox(label='Editable page text', lines=14, interactive=True,
+                                            placeholder='Extract a document on Upload to see its page text here.', elem_classes=['document-text'])
+                        save = gr.Button('Save page corrections', interactive=False)
+                        gr.Markdown('Save before switching pages. Continue also saves the current page.', elem_classes=['quiet-note'])
+                    with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
+                        gr.Markdown('### All pages at a glance')
+                        combined = gr.Textbox(label='Saved document text', lines=14, interactive=False,
+                                              placeholder='Text from all pages appears after extraction. Saved corrections appear here too.', elem_classes=['document-text'])
+                        gr.Markdown('Page boundaries stay intact. Empty pages are flagged rather than filled with guessed text.', elem_classes=['quiet-note'])
+                with gr.Row():
+                    back = gr.Button('← Back to upload')
+                    ready = gr.Button('Save page & view results →', variant='primary', interactive=False)
     with results_tab:
         with gr.Group() as results_panel:
-            stage_intro('Document text and downloads', 'Results come from your uploaded file. Check the text before using it; this workflow does not generate notice details or action plans.')
-            results_empty = gr.Markdown('**No document results yet.** Extract a document on Upload, then check its text on Review. Your saved text and JSON download will appear here.', elem_classes=['empty-state'])
-            result_summary = gr.Textbox(label='Extraction summary · uploaded document', interactive=False,
-                                        lines=3, visible=False)
-            with gr.Row():
-                with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
-                    gr.Markdown('### Document text')
-                    result_text = gr.Textbox(label='Combined text · includes saved corrections', lines=12, interactive=False,
-                                            placeholder='No extracted text yet. Start on Upload, then review and save any corrections.', elem_classes=['document-text'])
-                    with gr.Accordion('Technical details · JSON and original text', open=False):
-                        payload = gr.JSON(label='Document reading result')
-                with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
-                    gr.Markdown('### Take your text with you')
-                    gr.Markdown('Create a JSON file containing the saved text, original extraction, page order and reading status. Save any page corrections on Review first.', elem_classes=['quiet-note'])
-                    export = gr.Button('Prepare JSON download', variant='primary', interactive=False)
-                    download = gr.File(label='Document JSON', interactive=False)
-                    edit_again = gr.Button('← Return to review')
+            with gr.Accordion('Extracted text and JSON download', open=False):
+                stage_intro('Document text and downloads', 'Results come from your uploaded file. Check the text before using it; the confirmed Gemma action plan appears below after fact review.')
+                results_empty = gr.Markdown('**No document results yet.** Extract a document on Upload, then check its text on Review. Your saved text and JSON download will appear here.', elem_classes=['empty-state'])
+                result_summary = gr.Textbox(label='Extraction summary · uploaded document', interactive=False,
+                                            lines=3, visible=False)
+                with gr.Row():
+                    with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
+                        gr.Markdown('### Document text')
+                        result_text = gr.Textbox(label='Combined text · includes saved corrections', lines=12, interactive=False,
+                                                placeholder='No extracted text yet. Start on Upload, then review and save any corrections.', elem_classes=['document-text'])
+                        with gr.Accordion('Technical details · JSON and original text', open=False):
+                            payload = gr.JSON(label='Document reading result')
+                    with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
+                        gr.Markdown('### Take your text with you')
+                        gr.Markdown('Create a JSON file containing the saved text, original extraction, page order and reading status. Save any page corrections on Review first.', elem_classes=['quiet-note'])
+                        export = gr.Button('Prepare JSON download', variant='primary', interactive=False)
+                        download = gr.File(label='Document JSON', interactive=False)
+                        edit_again = gr.Button('← Return to review')
     with gr.Group() as status_panel:
         status = gr.Textbox(label='Document reading status', value='Step 1: choose a PDF or image on Upload, then click Extract text.', lines=2, interactive=False, elem_classes=['workflow-status'])
     outputs = [result, metadata, previews, page, editor, combined, payload, download, status]
@@ -311,4 +313,4 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
     result.change(reader_availability, result,
                   [review_empty, results_empty, save, ready, export, result_summary], queue=False)
     return {'result': result, 'panels': [upload_panel, review_panel, results_panel, status_panel],
-            'session': session, 'read_event': read_event}
+            'session': session, 'read_event': read_event, 'upload': upload, 'combined': combined, 'editor': editor, 'upload_controls': upload_controls}

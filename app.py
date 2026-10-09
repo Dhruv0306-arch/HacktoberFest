@@ -3,6 +3,8 @@ import gradio as gr
 from ui_adapter import MODE, SCALARS, LISTS, extract_notice, build_guidance
 from ui_utils import export_plan, parse_deadline, official_resources
 from document_ui import build_document_reader
+from model_ui import build_model_workflow
+from presentation_utils import plain_markdown
 
 BASE = Path(__file__).resolve().parent
 EDIT_KEYS = SCALARS + ['eligibility', 'required_actions', 'documents_needed', 'unclear_fields']
@@ -50,14 +52,14 @@ def create_plan(original, language, region, confirmed, date_checked, *values):
         checklist = list(dict.fromkeys(guidance['checklist']))
         guidance['checklist'] = checklist
         files = export_plan(fields, guidance, date_checked, MODE)
-        summary = guidance['explanation']
+        summary = plain_markdown(guidance['explanation'])
         summary += f"\n\nConfirmed amount: {fields.get('amount') or 'Not supplied'}\nConfirmed deadline: {fields.get('deadline') or 'Unknown'}"
         if fields['unclear_fields']:
             summary += '\n\nStill unresolved:\n' + '\n'.join(fields['unclear_fields'])
         message = 'Plan ready. Tick tasks as you complete them.'
         if len(files) == 1:
             message += ' Calendar omitted: verify the date and resolve all unclear items to enable it.'
-        return summary, gr.CheckboxGroup(choices=checklist, value=[]), files, official_resources(fields['doc_type'], region), message
+        return summary, gr.CheckboxGroup(choices=[plain_markdown(item) for item in checklist], value=[]), files, official_resources(fields['doc_type'], region), message
     except Exception as exc:
         return *empty_plan(), f'Could not build plan: {exc}'
 
@@ -68,7 +70,7 @@ SAMPLE_SOURCE = 'Demo sample' if MODE == 'demo' else 'Model workflow'
 
 def switch_source(source):
     real = source == 'Your document'
-    note = ('**Your document** · Extract and review text from a PDF or image. Action plans are not available for uploads yet.' if real else
+    note = ('**Your document** · Analyze a PDF, image or pasted text with your backend, review the facts, then generate your action plan.' if real else
             '**Demo sample — saved example data** · Explore an example action plan. These results are not extracted from your uploads.' if MODE == 'demo' else
             '**Model workflow** · Uses the configured model adapter only when you click Read notice.')
     return (*[gr.Group(visible=real) for _ in range(4)],
@@ -76,12 +78,12 @@ def switch_source(source):
             gr.Tabs(selected='upload'), note)
 
 
-with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
+with gr.Blocks(title='DeadLense', analytics_enabled=False) as demo:
     original = gr.State({})
-    gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">N</div><div><div class="brand-name">NoticeBridge</div><div class="brand-tag">Community information, made clear</div></div></div>')
+    gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">D</div><div><div class="brand-name">DeadLense</div><div class="brand-tag">Community information, made clear</div></div></div>')
     gr.HTML('<div id="hero"><p class="eyebrow">READ · VERIFY · ACT</p><h1>Read your notice. Know what comes next.</h1><p class="subtitle">Upload a document, preview it, and review its text. Or explore a saved sample to see an example action plan.</p></div>')
     source = gr.Radio(['Your document', SAMPLE_SOURCE], value='Your document', label='Choose your starting point', elem_id='source-switch')
-    source_note = gr.Markdown('**Your document** · Extract and review text from a PDF or image. Action plans are not available for uploads yet.', elem_id='source-note')
+    source_note = gr.Markdown('**Your document** · Analyze a PDF, image or pasted text with your backend, review the facts, then generate your action plan.', elem_id='source-note')
     with gr.Tabs(selected='upload', elem_id='workflow') as navigation:
         with gr.Tab('01  Upload', id='upload') as upload_tab:
             pass
@@ -91,6 +93,7 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
             pass
     reader = build_document_reader(upload_tab, review_tab, results_tab, navigation, source)
     document_result = reader['result']
+    backend_workflow = build_model_workflow(reader, navigation, source)
     with upload_tab:
         with gr.Group(visible=False) as sample_upload:
             stage_intro('Explore a sample notice' if MODE == 'demo' else 'Choose a notice for the model',
@@ -146,7 +149,7 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
                 gr.Markdown('Only entries matching your category and region appear. No match means no recommendation.', elem_classes=['quiet-note'])
     with gr.Group(visible=False) as sample_status:
         status = gr.Textbox(label='Sample workflow status' if MODE == 'demo' else 'Model workflow status', value='Choose a sample and click Read sample.' if MODE == 'demo' else 'Choose a notice to begin.', lines=2, interactive=False, elem_classes=['workflow-status'])
-    gr.Markdown('NoticeBridge · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
+    gr.Markdown('DeadLense · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
     source.input(switch_source, source, [*reader['panels'], sample_upload, sample_review, sample_results, sample_status, navigation, source_note], queue=False)
     plan_outputs = [explanation, tasks, downloads, resources]
     extraction_outputs = [original, *editors, evidence, confirmed, date_checked, *plan_outputs, status]

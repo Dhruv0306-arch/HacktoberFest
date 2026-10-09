@@ -1,0 +1,155 @@
+{
+  "source": {
+    "name": "Campus Services Directory (demo seed)",
+    "publisher": "Demo campus data for the hackathon prototype",
+    "url": "https://example.edu/services/directory",
+    "last_checked": "2026-10-09T09:00:00+05:30",
+    "refresh_note": "Replace this file with a real campus directory / official event feed export."
+  },
+  "entries": [
+    {
+      "id": "scholarship-office",
+      "name": "Scholarship & Financial Aid Office",
+      "aliases": ["scholarship office", "scholarship", "financial aid", "fee reimbursement", "stipend", "tuition fee"],
+      "category": "finance",
+      "location": "Admin Block, Room 12",
+      "hours": "Mon-Fri 10:00-17:00",
+      "phone": "+91 22 5550 0101",
+      "email": "scholarships@example.edu",
+      "url": "https://example.edu/scholarships",
+      "notes": "Submit signed applications in person or via the scholarship portal."
+    },
+    {
+      "id": "admissions-cell",
+      "name": "Admissions Cell",
+      "aliases": ["admission", "admissions", "application form", "apply online", "prospectus", "provisional admission"],
+      "category": "academics",
+      "location": "Admissions Block, Ground Floor",
+      "hours": "Mon-Sat 09:30-16:30",
+      "phone": "+91 22 5550 0102",
+      "email": "admissions@example.edu",
+      "url": "https://example.edu/admissions",
+      "notes": "Handles new applications, waitlists and admission confirmations."
+    },
+    {
+      "id": "exam-cell",
+      "name": "Examination Cell",
+      "aliases": ["exam cell", "examination", "hall ticket", "exam fee", "timetable", "results", "question paper"],
+      "category": "academics",
+      "location": "Admin Block, Room 24",
+      "hours": "Mon-Fri 10:00-16:00",
+      "phone": "+91 22 5550 0103",
+      "email": "exams@example.edu",
+      "url": "https://example.edu/exams",
+      "notes": "Exam registration, hall tickets and result grievances."
+    },
+    {
+      "id": "registrar-office",
+      "name": "Registrar's Office",
+      "aliases": ["registrar", "certificate", "transcript", "bonafide", "enrolment", "degree"],
+      "category": "admin",
+      "location": "Admin Block, Room 01",
+      "hours": "Mon-Fri 10:00-17:00",
+      "phone": "+91 22 5550 0104",
+      "email": "registrar@example.edu",
+      "url": "https://example.edu/registrar",
+      "notes": "Issues Bonafide, transcripts and enrolment letters."
+    },
+    {
+      "id": "it-helpdesk",
+      "name": "IT Helpdesk",
+      "aliases": ["helpdesk", "portal login", "password reset", "technical issue", "website down", "online portal"],
+      "category": "support",
+      "location": "Library Annexe, First Floor",
+      "hours": "Mon-Sat 09:00-18:00",
+      "phone": "+91 22 5550 0105",
+      "email": "helpdesk@example.edu",
+      "url": "https://example.edu/it-help",
+      "notes": "Portal accounts, OTP problems and registration form errors."
+    },
+    {
+      "id": "student-affairs",
+      "name": "Student Affairs Desk",
+      "aliases": ["student affairs", "event notice", "workshop", "seminar", "cultural event", "notice board"],
+      "category": "student life",
+      "location": "Student Centre, Level 1",
+      "hours": "Mon-Fri 11:00-18:00",
+      "phone": "+91 22 5550 0106",
+      "email": "studentaffairs@example.edu",
+      "url": "https://example.edu/student-affairs",
+      "notes": "Official feed for campus events, workshops and closures."
+    },
+    {
+      "id": "training-placement-cell",
+      "name": "Training & Placement Cell",
+      "aliases": ["placement", "internship", "job notice", "recruitment", "career", "drive"],
+      "category": "career",
+      "location": "Placement Block, Room 3",
+      "hours": "Mon-Fri 09:30-17:30",
+      "phone": "+91 22 5550 0107",
+      "email": "placements@example.edu",
+      "url": "https://example.edu/placements",
+      "notes": "Campus drives, internship postings and eligibility screening."
+    },
+    {
+      "id": "central-library",
+      "name": "Central Library",
+      "aliases": ["library", "book issue", "journal", "reading room", "library fine"],
+      "category": "facilities",
+      "location": "Library Block",
+      "hours": "Mon-Sat 08:00-22:00",
+      "phone": "+91 22 5550 0108",
+      "email": "library@example.edu",
+      "url": "https://example.edu/library",
+      "notes": "Reading access, borrowings and overdue fines."
+    },
+    {
+      "id": "hostel-office",
+      "name": "Hostel Office",
+      "aliases": ["hostel", "accommodation", "room allotment", "mess", "warden"],
+      "category": "facilities",
+      "location": "Hostel Block A, Ground Floor",
+      "hours": "Mon-Sat 10:00-19:00",
+      "phone": "+91 22 5550 0109",
+      "email": "hostel@example.edu",
+      "url": "https://example.edu/hostel",
+      "notes": "Room allotment, mess plans and visitor passes."
+    },
+    {
+      "id": "health-centre",
+      "name": "Campus Health Centre",
+      "aliases": ["health centre", "medical", "checkup", "insurance claim", " ambulance"],
+      "category": "welfare",
+      "location": "Near Sports Complex",
+      "hours": "Mon-Sat 09:00-20:00",
+      "phone": "+91 22 5550 0110",
+      "email": "health@example.edu",
+      "url": "https://example.edu/health",
+      "notes": "Medical certificates, insurance forms and emergency care."
+    },
+    {
+      "id": "transport-desk",
+      "name": "Transport Desk",
+      "aliases": ["bus pass", "shuttle", "transport", "parking", "commute"],
+      "category": "facilities",
+      "location": "Gate 2, Security Office",
+      "hours": "Mon-Sat 08:00-20:00",
+      "phone": "+91 22 5550 0111",
+      "email": "transport@example.edu",
+      "url": "https://example.edu/transport",
+      "notes": "Bus routes, shuttle timings and vehicle passes."
+    },
+    {
+      "id": "grievance-cell",
+      "name": "Grievance Cell",
+      "aliases": ["grievance", "complaint", "helpline", "reporting", "anti ragging"],
+      "category": "welfare",
+      "location": "Admin Block, Room 07",
+      "hours": "Mon-Fri 10:00-17:00",
+      "phone": "+91 22 5550 0112",
+      "email": "grievance@example.edu",
+      "url": "https://example.edu/grievance",
+      "notes": "Confidential complaints and escalation."
+    }
+  ]
+}

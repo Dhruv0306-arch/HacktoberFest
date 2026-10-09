@@ -39,18 +39,18 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(list(stream), [])
         self.assertIsNotNone(job.process.poll())
 
-    def test_replacement_clears_stale_result(self):
+    def test_replacement_cancels_pending_without_clearing_saved_fields(self):
         stream = ui.process_document(str(ROOT / 'tests/fixtures/text.pdf'), 'English', False, self.session)
         next(stream)
         selected = ui.select_document(str(ROOT / 'samples/fee_notice.png'), self.session)
-        self.assertEqual(selected[0], {})
-        self.assertEqual(selected[4], '')
+        self.assertEqual(selected[0], {'__type__': 'update'})
+        self.assertEqual(selected[4], {'__type__': 'update'})
         self.assertEqual(list(stream), [])
 
     def test_clear_and_error_states(self):
-        self.assertEqual(ui.select_document(None, self.session)[0], {})
+        self.assertEqual(ui.select_document(None, self.session)[0], {'__type__': 'update'})
         result = list(ui.process_document(None, 'English', False, self.session))[-1]
-        self.assertEqual(result[0], {})
+        self.assertEqual(result[0], {'__type__': 'update'})
         self.assertIn('Could not start', result[-1])
 
     def test_reader_actions_wait_for_extraction(self):
@@ -64,7 +64,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(all(button.interactive for button in available[2:5]))
         self.assertIn('review it before use', available[-1].value)
         # Clearing/replacing a document must restore the empty state.
-        cleared = ui.reader_availability(ui.select_document(None, self.session)[0])
+        cleared = ui.reader_availability(ui.reset_reader(self.session)[1])
         self.assertTrue(cleared[0].visible)
         self.assertFalse(cleared[4].interactive)
 
@@ -97,7 +97,7 @@ class WorkflowTests(unittest.TestCase):
             generated = app.create_plan(extracted[0], 'English', '', True, True, *values)
             self.assertEqual(len(generated[2]), 2)
         self.assertEqual(app.invalidate()[:2], (False, False))
-        self.assertEqual(app.read_notice(None, 'Clean notice')[0], {})
+        self.assertEqual(app.read_notice(None, 'Clean notice')[0], {'__type__': 'update'})
 
 
 if __name__ == '__main__':

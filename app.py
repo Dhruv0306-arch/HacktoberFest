@@ -5,6 +5,7 @@ from ui_utils import export_plan, parse_deadline, official_resources
 from document_ui import build_document_reader
 from model_ui import build_model_workflow
 from presentation_utils import plain_markdown
+from ui_session import WorkspaceSession
 
 BASE = Path(__file__).resolve().parent
 EDIT_KEYS = SCALARS + ['eligibility', 'required_actions', 'documents_needed', 'unclear_fields']
@@ -33,10 +34,7 @@ def read_notice(path, sample):
         message = 'Needs review: check the unresolved items.' if data['unclear_fields'] else 'Extracted. Compare the details with the notice before confirming.'
         return data, *values, evidence, False, False, *empty_plan(), message
     except Exception as exc:
-        # Clear stale results even if the next model request fails.
-        result = list(reset_notice())
-        result[-1] = f'Could not read notice: {exc}'
-        return tuple(result)
+        return *([gr.skip()] * (len(reset_notice()) - 1)), f'Could not read notice: {exc}. Previous sample results are unchanged.'
 
 def create_plan(original, language, region, confirmed, date_checked, *values):
     try:
@@ -61,25 +59,26 @@ def create_plan(original, language, region, confirmed, date_checked, *values):
             message += ' Calendar omitted: verify the date and resolve all unclear items to enable it.'
         return summary, gr.CheckboxGroup(choices=[plain_markdown(item) for item in checklist], value=[]), files, official_resources(fields['doc_type'], region), message
     except Exception as exc:
-        return *empty_plan(), f'Could not build plan: {exc}'
+        return *([gr.skip()] * 4), f'Could not build plan: {exc}. Previous results are unchanged.'
 
 from ui_style import CSS, THEME, stage_intro
 
 SAMPLE_SOURCE = 'Demo sample' if MODE == 'demo' else 'Model workflow'
 
 
-def switch_source(source):
+def switch_source(source, memory=None):
     real = source == 'Your document'
     note = ('**Your document** · Analyze a PDF, image or pasted text with your backend, review the facts, then generate your action plan.' if real else
             '**Demo sample — saved example data** · Explore an example action plan. These results are not extracted from your uploads.' if MODE == 'demo' else
             '**Model workflow** · Uses the configured model adapter only when you click Read notice.')
     return (*[gr.Group(visible=real) for _ in range(4)],
             *[gr.Group(visible=not real) for _ in range(4)],
-            gr.Tabs(selected='upload'), note)
+            gr.Tabs(selected=memory.select_source(source) if memory else 'upload'), note)
 
 
 with gr.Blocks(title='DeadLense', analytics_enabled=False) as demo:
     original = gr.State({})
+    workspace = gr.State(WorkspaceSession)
     gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">D</div><div><div class="brand-name">DeadLense</div><div class="brand-tag">Community information, made clear</div></div></div>')
     gr.HTML('<div id="hero"><p class="eyebrow">READ · VERIFY · ACT</p><h1>Read your notice. Know what comes next.</h1><p class="subtitle">Upload a document, preview it, and review its text. Or explore a saved sample to see an example action plan.</p></div>')
     source = gr.Radio(['Your document', SAMPLE_SOURCE], value='Your document', label='Choose your starting point', elem_id='source-switch')
@@ -91,9 +90,13 @@ with gr.Blocks(title='DeadLense', analytics_enabled=False) as demo:
             pass
         with gr.Tab('03  Results', id='results') as results_tab:
             pass
-    reader = build_document_reader(upload_tab, review_tab, results_tab, navigation, source)
+    reader = build_document_reader(upload_tab, review_tab, results_tab, navigation, source, workspace)
     document_result = reader['result']
-    backend_workflow = build_model_workflow(reader, navigation, source)
+    backend_workflow = build_model_workflow(reader, navigation, source, workspace)
+    for tab, stage in [(upload_tab, 'upload'), (review_tab, 'review'), (results_tab, 'results')]:
+        def remember_tab(current, memory, selected_stage=stage):
+            memory.remember_stage(current, selected_stage)
+        tab.select(remember_tab, [source, workspace], outputs=[], queue=False)
     with upload_tab:
         with gr.Group(visible=False) as sample_upload:
             stage_intro('Explore a sample notice' if MODE == 'demo' else 'Choose a notice for the model',
@@ -150,22 +153,36 @@ with gr.Blocks(title='DeadLense', analytics_enabled=False) as demo:
     with gr.Group(visible=False) as sample_status:
         status = gr.Textbox(label='Sample workflow status' if MODE == 'demo' else 'Model workflow status', value='Choose a sample and click Read sample.' if MODE == 'demo' else 'Choose a notice to begin.', lines=2, interactive=False, elem_classes=['workflow-status'])
     gr.Markdown('DeadLense · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
-    source.input(switch_source, source, [*reader['panels'], sample_upload, sample_review, sample_results, sample_status, navigation, source_note], queue=False)
+    source.input(switch_source, [source, workspace], [*reader['panels'], sample_upload, sample_review, sample_results, sample_status, navigation, source_note], queue=False)
     plan_outputs = [explanation, tasks, downloads, resources]
     extraction_outputs = [original, *editors, evidence, confirmed, date_checked, *plan_outputs, status]
     event_options = {'concurrency_id': 'workflow', 'concurrency_limit': 1}
+    def remember_sample(memory, data, *values):
+        memory.save_draft(SAMPLE_SOURCE, {'original': data, 'editors': list(values)})
+    def sample_stage(data, current, message, memory, stage):
+        if not data or message.startswith('Could not'):
+            return gr.skip()
+        memory.remember_stage(SAMPLE_SOURCE, stage)
+        return gr.Tabs(selected=stage) if memory.showing(SAMPLE_SOURCE) else gr.skip()
     read_button.click(read_notice, [notice, sample], extraction_outputs, **event_options).then(
-        lambda data, current: gr.Tabs(selected='review') if data and current == SAMPLE_SOURCE else gr.skip(), [original, source], navigation)
+        remember_sample, [workspace, original, *editors], outputs=[], queue=False).then(
+        lambda data, current, message, memory: sample_stage(data, current, message, memory, 'review'), [original, source, status, workspace], navigation)
     confirm_button.click(create_plan, [original, language, region, confirmed, date_checked, *editors], [*plan_outputs, status], **event_options).then(
-        lambda text, current: gr.Tabs(selected='results') if text and current == SAMPLE_SOURCE else gr.skip(), [explanation, source], navigation)
-    notice.change(reset_notice, outputs=extraction_outputs, **event_options)
+        lambda text, current, message, memory: sample_stage(text, current, message, memory, 'results'), [explanation, source, status, workspace], navigation)
+    def reset_sample(memory):
+        memory.reset(SAMPLE_SOURCE)
+        return reset_notice()
+    notice.change(reset_sample, workspace, extraction_outputs, **event_options)
     sample.change(sample_path, sample, notice, **event_options)
     for component in [*editors, language, region]:
-        component.input(invalidate, outputs=[confirmed, date_checked, *plan_outputs, status], **event_options)
+        def sample_edited(memory, data, *values):
+            remember_sample(memory, data, *values)
+            return invalidate()
+        component.input(sample_edited, [workspace, original, *editors], outputs=[confirmed, date_checked, *plan_outputs, status], **event_options)
     for checkbox in [confirmed, date_checked]:
         checkbox.input(empty_plan, outputs=plan_outputs, **event_options)
-    sample_back.click(lambda: gr.Tabs(selected='upload'), outputs=navigation, queue=False)
-    sample_edit.click(lambda: gr.Tabs(selected='review'), outputs=navigation, queue=False)
+    sample_back.click(lambda memory: gr.Tabs(selected=memory.remember_stage(SAMPLE_SOURCE, 'upload')), workspace, navigation, queue=False)
+    sample_edit.click(lambda memory: gr.Tabs(selected=memory.remember_stage(SAMPLE_SOURCE, 'review')), workspace, navigation, queue=False)
     original.change(lambda data: gr.Markdown(visible=not bool(data)), original, sample_review_empty, queue=False)
     explanation.change(lambda text: gr.Markdown(visible=not bool(text)), explanation, sample_results_empty, queue=False)
 

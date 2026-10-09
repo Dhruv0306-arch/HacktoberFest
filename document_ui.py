@@ -75,22 +75,38 @@ class ReaderSession:
         self.lock = Lock()
         self.job = None
         self.generation = 0
+        self.completed_jobs = []
 
     def __deepcopy__(self, memo):
         return ReaderSession()
 
-    def cancel(self):
+    def cancel(self, clear_results=True):
         with self.lock:
             self.generation += 1
             job, self.job = self.job, None
+            completed = self.completed_jobs if clear_results else []
+            if clear_results:
+                self.completed_jobs = []
         if job:
             job.cleanup()
+        for old in completed:
+            old.cleanup()
 
     def begin(self, path, language, scans):
-        self.cancel()
+        self.cancel(clear_results=False)
         with self.lock:
             self.job = ReaderJob(path, language, scans)
             return self.job, self.generation
+
+    def complete(self, job, generation):
+        with self.lock:
+            if self.job is not job or self.generation != generation:
+                return False
+            old, self.completed_jobs = self.completed_jobs, [job]
+            self.job = None
+        for previous in old:
+            previous.cleanup()
+        return True
 
     def current(self, job, generation):
         with self.lock:
@@ -101,10 +117,15 @@ def _clear(status='Select a PDF, image, TXT, DOCX, PPTX or PPT to start.'):
     return {}, '', [], gr.Dropdown(choices=[], value=None), '', '', None, None, status
 
 
-def select_document(path, session):
+def reset_reader(session):
     session.cancel()
+    return None, *_clear('Document workflow reset. Choose a new document.')
+
+
+def select_document(path, session, previous=None):
+    session.cancel(clear_results=False)
     if not path:
-        return _clear()
+        return (gr.skip(),) * 8 + (('No file selected. Saved results remain available; use New document / reset to clear them.' if previous else 'Select a document to begin.'),)
     try:
         info = file_info(path)
         metadata = f"{info['fileName']} | {info['fileType']} | {info['fileSize'] / 1024:.1f} KB"
@@ -115,28 +136,29 @@ def select_document(path, session):
                     raise DocumentError('Image dimensions exceed the configured limit. Resize it first.')
                 image.verify()
             preview = [(str(path), 'Selected image')]
-        return {}, metadata, preview, gr.Dropdown(choices=[], value=None), '', '', None, None, 'File selected. Click Read document for AI analysis or Extract text for local reading. PDF previews appear after extraction; Office documents have editable text previews.'
+        saved = bool(previous)
+        return gr.skip(), metadata, gr.skip() if saved else preview, gr.skip(), gr.skip(), gr.skip(), gr.skip(), gr.skip(), 'File selected. Click Read document for AI analysis or Extract text for local reading. Previous successful text and edits remain saved until extraction succeeds.'
     except Exception as exc:
         message = str(exc) if isinstance(exc, DocumentError) else 'Cannot preview this image. It may be damaged; upload a fresh PNG/JPG.'
-        return _clear('Upload error: ' + message)
+        return (gr.skip(),) * 8 + ('Upload error: ' + message + '. Previous successful results are unchanged.',)
 
 
-def process_document(path, language, scans, session):
+def process_document(path, language, scans, session, previous=None):
     # Gradio consumes this generator without blocking stop/replacement events.
     try:
         info = file_info(path)
         job, generation = session.begin(path, language, scans)
     except Exception as exc:
-        yield _clear(f'Could not start: {exc}')
+        yield (gr.skip(),) * 8 + (f'Could not start: {exc}. Previous successful text and edits are unchanged.',)
         return
     metadata = f"{info['fileName']} | {info['fileType']} | {info['fileSize'] / 1024:.1f} KB"
-    yield {}, metadata, [], gr.Dropdown(choices=[], value=None), '', '', None, None, 'Reading locally…'
+    yield (gr.skip(),) * 8 + ('Reading locally… Previous successful text and edits remain available.',)
     finished = False
     try:
         while session.current(job, generation):
             if time.monotonic() - job.started > READ_TIMEOUT:
                 job.stop()
-                yield {}, metadata, [], gr.Dropdown(choices=[], value=None), '', '', None, None, f'Reading timed out after {READ_TIMEOUT}s. Split or resize the file and retry.'
+                yield (gr.skip(),) * 8 + (f'Reading timed out after {READ_TIMEOUT}s. Previous results are unchanged. Split or resize the file and retry.',)
                 return
             try:
                 event = job.events.get(timeout=0.2)
@@ -150,18 +172,23 @@ def process_document(path, language, scans, session):
                 yield (gr.skip(),) * 8 + (prefix + event['message'],)
             elif event['type'] == 'result':
                 result = event['result']
+                if previous and not result.get('hasReadableText'):
+                    yield (gr.skip(),) * 8 + ('No readable text obtained from the new file. Previous successful text and edits are unchanged. Enable OCR or try another file.',)
+                    return
                 payload = apply_page_edits(result, [p['text'] for p in result['pages']])
                 previews = [(p['previewPath'], p.get('sourceRef', f"Page {p['pageNumber']}")) for p in result['pages'] if p.get('previewPath')]
                 choices = [str(p['pageNumber']) for p in result['pages']]
                 status = f"{result['extractionStatus'].upper()} · {result['extractionMethod']} · {result['pageCount']} page(s). Review text before reuse. No model inference performed."
                 if result['warnings']:
                     status += '\n' + '\n'.join(result['warnings'])
-                yield result, metadata, previews, gr.Dropdown(choices=choices, value='1'), result['pages'][0]['text'], payload['extractedText'], payload, None, status
+                if not session.complete(job, generation):
+                    return
                 finished = True
+                yield result, metadata, previews, gr.Dropdown(choices=choices, value='1'), result['pages'][0]['text'], payload['extractedText'], payload, None, status
                 return
             elif event['type'] in {'error', 'exit'}:
                 message = event.get('message', 'Reader stopped unexpectedly. Try a smaller file or reinstall the reader dependencies.')
-                yield {}, metadata, [], gr.Dropdown(choices=[], value=None), '', '', None, None, 'Reading error: ' + message
+                yield (gr.skip(),) * 8 + ('Reading error: ' + message + '. Previous successful text and edits are unchanged.',)
                 return
     finally:
         if not finished:
@@ -220,7 +247,7 @@ def reader_availability(result):
             gr.Textbox(value=summary, visible=available))
 
 
-def build_document_reader(upload_tab, review_tab, results_tab, navigation, source):
+def build_document_reader(upload_tab, review_tab, results_tab, navigation, source, workspace):
     """Render the real-document source into the shared three-stage workspace."""
     from ui_style import stage_intro
     session = gr.State(value=ReaderSession, time_to_live=3600,
@@ -242,7 +269,7 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
                         run = gr.Button('Extract text →')
                         with gr.Row():
                             stop = gr.Button('Cancel reading', size='sm')
-                            remove = gr.Button('Remove file', size='sm')
+                            remove = gr.Button('New document / reset', size='sm')
                 with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
                     gr.Markdown('### Document preview')
                     previews = gr.Gallery(label='Pages in document order', columns=2, height=400, interactive=False)
@@ -250,7 +277,7 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
     with review_tab:
         with gr.Group() as review_panel:
             with gr.Accordion('Page text and OCR corrections', open=False):
-                stage_intro('Review the extracted text', 'Compare each page with the preview on Upload. Correct any mistakes, save before changing pages, then continue to Results.')
+                stage_intro('Review the extracted text', 'Compare each page with the preview on Upload. Edits stay in this session when you change pages or views. Save or continue when ready.')
                 review_empty = gr.Markdown('**No extracted text yet.** Go to Upload, select a document, and click **Extract text**. Then review each page here.', elem_classes=['empty-state'])
                 with gr.Row():
                     with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
@@ -290,27 +317,32 @@ def build_document_reader(upload_tab, review_tab, results_tab, navigation, sourc
     with gr.Group() as status_panel:
         status = gr.Textbox(label='Document reading status', value='Step 1: choose a document on Upload, then click Read document or Extract text.', lines=2, interactive=False, elem_classes=['workflow-status'])
     outputs = [result, metadata, previews, page, editor, combined, payload, download, status]
-    read_event = run.click(process_document, [upload, language, scans, session], outputs,
+    read_event = run.click(process_document, [upload, language, scans, session, result], outputs,
                            concurrency_limit=2, trigger_mode='once')
-    read_event.then(lambda data, current: gr.Tabs(selected='review') if data and current == 'Your document' else gr.skip(), [result, source], navigation)
-    upload.change(select_document, [upload, session], outputs, queue=False, cancels=[read_event])
+    def reader_stage(data, current, message, memory):
+        if not data or not message.startswith(('SUCCESS', 'PARTIAL', 'OCR_REQUIRED', 'NO_TEXT')):
+            return gr.skip()
+        memory.remember_stage('Your document', 'review')
+        return gr.Tabs(selected='review') if memory.showing('Your document') else gr.skip()
+    read_event.then(reader_stage, [result, source, status, workspace], navigation)
+    upload.change(select_document, [upload, session, result], outputs, queue=False, cancels=[read_event])
 
     def cancel(session):
-        session.cancel()
-        return _clear('Reading cancelled. Click Extract text to retry.')
+        session.cancel(clear_results=False)
+        return (gr.skip(),) * 8 + ('Reading cancelled. Previous successful text and edits remain saved.',)
 
     stop.click(cancel, session, outputs, queue=False, cancels=[read_event])
-    remove.click(lambda session: (session.cancel(), None)[1], session, upload, queue=False, cancels=[read_event])
-    page.input(load_page, [result, page], editor)
-    save.click(save_page, [result, page, editor], [result, combined, payload, download, status])
-    editor.input(lambda: (None, 'Unsaved page edits. Save before switching pages or exporting.'), outputs=[download, status], queue=False)
+    remove.click(reset_reader, session, [upload, *outputs], queue=False, cancels=[read_event])
+    page.input(load_page, [result, page], editor, concurrency_id='reader-edits', concurrency_limit=1, trigger_mode='multiple')
+    save.click(save_page, [result, page, editor], [result, combined, payload, download, status], concurrency_id='reader-edits', concurrency_limit=1)
+    editor.input(save_page, [result, page, editor], [result, combined, payload, download, status], concurrency_id='reader-edits', concurrency_limit=1, trigger_mode='multiple')
     export.click(download_result, result, download)
     combined.change(lambda text: text, combined, result_text, queue=False)
-    ready.click(save_page, [result, page, editor], [result, combined, payload, download, status]).success(
-        lambda: gr.Tabs(selected='results'), outputs=navigation)
-    back.click(lambda: gr.Tabs(selected='upload'), outputs=navigation, queue=False)
-    edit_again.click(lambda: gr.Tabs(selected='review'), outputs=navigation, queue=False)
+    ready.click(save_page, [result, page, editor], [result, combined, payload, download, status], concurrency_id='reader-edits', concurrency_limit=1).success(
+        lambda memory: gr.Tabs(selected=memory.remember_stage('Your document', 'results')) if memory.showing('Your document') else gr.skip(), workspace, navigation)
+    back.click(lambda memory: gr.Tabs(selected=memory.remember_stage('Your document', 'upload')), workspace, navigation, queue=False)
+    edit_again.click(lambda memory: gr.Tabs(selected=memory.remember_stage('Your document', 'review')), workspace, navigation, queue=False)
     result.change(reader_availability, result,
                   [review_empty, results_empty, save, ready, export, result_summary], queue=False)
     return {'result': result, 'panels': [upload_panel, review_panel, results_panel, status_panel],
-            'session': session, 'read_event': read_event, 'upload': upload, 'combined': combined, 'editor': editor, 'upload_controls': upload_controls}
+            'session': session, 'read_event': read_event, 'upload': upload, 'combined': combined, 'editor': editor, 'upload_controls': upload_controls, 'reset': remove}

@@ -210,10 +210,13 @@ def prepare_plan_download(record):
     return export_bytes('checklist.txt', plain_markdown(render_markdown(record)).encode('utf-8'))
 
 
-def build_model_workflow(reader, navigation, source):
+def build_model_workflow(reader, navigation, source, workspace):
     client = BackendClient()
     request_session = gr.State(RequestSession)
     record = gr.State({})
+    # Capture the dataset identity with the submitted fields, even if a queued
+    # request is processed after another upload has succeeded.
+    analysis_key = gr.Textbox(value='', visible=False, interactive=False)
     plan = gr.State({})
     calendar_state = gr.State({})
     from ui_style import stage_intro
@@ -302,7 +305,7 @@ def build_model_workflow(reader, navigation, source):
         status = gr.Textbox(label='Backend workflow status', value='Ready. Analyze a notice to start the real workflow.', interactive=False, lines=3)
 
     plan_outputs = [plan, summary, required, optional, unresolved, plan_download, calendar_state, calendar_preview, calendar_confirm, calendar_download, directory_result]
-    output_components = [record, *editors, provenance, evidence, confirmed, *plan_outputs, status, navigation, *primary, excerpts, review_empty, results_empty, calendar_message, calendar_details, export_calendar, checklist_empty]
+    output_components = [record, *editors, provenance, evidence, confirmed, *plan_outputs, status, navigation, *primary, excerpts, review_empty, results_empty, calendar_message, calendar_details, export_calendar, checklist_empty, analysis_key]
 
     def clear_plan():
         return {**dict(zip(plan_outputs, [{}, '', gr.update(choices=[], value=[]), gr.update(choices=[], value=[]), None, None, {}, [['', '', '', '']], gr.update(value=False, interactive=False), None, None])),
@@ -310,24 +313,25 @@ def build_model_workflow(reader, navigation, source):
 
     def clear_all():
         empty = {'notice': Notice().model_dump()}
-        return {record: {}, **dict(zip(editors, notice_values(empty))), provenance: '', evidence: None,
+        return {record: {}, analysis_key: '', **dict(zip(editors, notice_values(empty))), provenance: '', evidence: None,
                 confirmed: False, **dict(zip(primary, primary_values({}))), excerpts: '', review_empty: gr.update(visible=True), results_empty: gr.update(visible=True), **clear_plan()}
 
     def invalidate_input(session):
         session.invalidate()
-        return {**clear_all(), status: 'Input changed. Analyze the current input; previous results have been cleared.'}
+        return {status: 'Input changed. Read the new input to replace results; the last successful document and edits remain saved.'}
 
-    def invalidate_facts(session):
+    def invalidate_facts(session, memory, data, *values):
         session.invalidate()
+        memory.save_draft('Your document', {'record_id': data.get('id'), 'editors': list(values[:17]), 'primary': list(values[17:])})
         return {confirmed: False, results_empty: gr.update(visible=True), **clear_plan(), status: 'Facts changed. Review and confirm again before using an action plan.'}
 
-    def run_analysis(path, text, lang, session, current_source):
+    def run_analysis(path, text, lang, session, current_source, memory):
         try:
             revision = session.begin()
         except BackendError as exc:
             yield {status: str(exc)}
             return
-        yield {**clear_all(), status: 'Gemma is reading the notice… This may take several minutes. Replacing the input discards this result.'}
+        yield {status: 'Gemma is reading the document… Previous successful results remain saved until this request succeeds.'}
         try:
             data = client.analyze(path=path, text=text, language=lang)
             if not session.current(revision):
@@ -337,35 +341,40 @@ def build_model_workflow(reader, navigation, source):
             description = f"Analysis {data['id']} · {src.get('filename', '')} · {src.get('kind', '')} · {src.get('pages', '?')} {unit}"
             if src.get('warnings'):
                 description += '\n' + '\n'.join(str(w) for w in src['warnings'])
-            yield {record: data, **dict(zip(editors, notice_values(data))), provenance: description,
+            memory.save_draft('Your document', {'record_id': data['id'], 'editors': notice_values(data), 'primary': primary_values(data)})
+            memory.remember_stage('Your document', 'review')
+            yield {**clear_plan(), confirmed: False, record: data, analysis_key: data['id'], **dict(zip(editors, notice_values(data))), provenance: description,
                    evidence: data.get('evidence', []), **dict(zip(primary, primary_values(data))), excerpts: source_excerpt_text(data), review_empty: gr.update(visible=False), status: ('Real backend response received. Review facts and uncertainties before confirming.' +
                             (' Some structured details were not returned: ' + ', '.join(field for field in ('dates', 'fees', 'action_items') if not data['notice'].get(field)) + '. Blank rows are not extracted facts.' if any(not data['notice'].get(field) for field in ('dates', 'fees', 'action_items')) else '')),
-                   navigation: gr.Tabs(selected='review')}
+                   navigation: gr.Tabs(selected='review') if memory.showing('Your document') else gr.skip()}
         except Exception as exc:
             if session.current(revision):
-                yield {**clear_all(), status: f'Analysis failed: {exc}'}
+                yield {status: f'Analysis failed: {exc}. Previous successful results and edits are unchanged.'}
         finally:
             session.finish()
 
-    def run_file(path, lang, session, current):
+    def run_file(path, lang, session, current, memory):
         if not path:
-            yield {**clear_all(), status: 'Choose a file first.'}
+            yield {status: 'Choose a file first. Previous successful results are unchanged.'}
             return
-        yield from run_analysis(path, '', lang, session, current)
+        yield from run_analysis(path, '', lang, session, current, memory)
 
-    def run_text(text, lang, session, current):
-        yield from run_analysis(None, text, lang, session, current)
+    def run_text(text, lang, session, current, memory):
+        yield from run_analysis(None, text, lang, session, current, memory)
 
-    def generate_plan(data, checked, lang, session, *values):
+    def generate_plan(data, checked, lang, session, memory, submitted_key, *values):
         if not data or not checked:
             yield {**clear_plan(), status: 'Analyze a notice, review the extracted facts, and check the confirmation box first.'}
+            return
+        if submitted_key != data.get('id'):
+            yield {status: 'The active document changed while this request was queued. Review the current document and confirm it again; saved results are unchanged.'}
             return
         try:
             revision = session.begin()
         except BackendError as exc:
             yield {status: str(exc)}
             return
-        yield {**clear_plan(), status: 'Saving corrections and generating a checklist from the confirmed facts…'}
+        yield {status: 'Saving corrections and generating a checklist from the confirmed facts…'}
         try:
             notice = reviewed_notice(data, values[:17])
             if len(values) > 17:
@@ -384,13 +393,15 @@ def build_model_workflow(reader, navigation, source):
                 download_message = f' Checklist file could not be saved: {exc}. Use Download checklist to retry.'
             if not session.current(revision):
                 return
-            yield {record: updated, plan: updated, summary: explanation, plan_download: ready_file,
+            memory.save_draft('Your document', {'record_id': updated['id'], 'editors': notice_values(updated), 'primary': primary_values(updated)})
+            memory.remember_stage('Your document', 'results')
+            yield {**clear_plan(), record: updated, plan: updated, summary: explanation, plan_download: ready_file,
                    checklist_empty: gr.update(value='No checklist actions were returned. Check the notice and extracted action fields; no tasks have been invented.', visible=not bool(req or opt)), required: gr.update(choices=req, value=[]), optional: gr.update(choices=opt, value=[]),
                    unresolved: {'missing': updated['notice']['missing'], 'needs_clearer_image': updated['notice']['needs_clearer_image']},
-                   **dict(zip(primary, primary_values(updated))), results_empty: gr.update(visible=False), status: 'Plan ready. Your checklist download is available under Keep your plan.' + download_message if ready_file else 'Plan ready.' + download_message, navigation: gr.Tabs(selected='results')}
+                   **dict(zip(editors, notice_values(updated))), **dict(zip(primary, primary_values(updated))), results_empty: gr.update(visible=False), status: 'Plan ready. Your checklist download is available under Keep your plan.' + download_message if ready_file else 'Plan ready.' + download_message, navigation: gr.Tabs(selected='results') if memory.showing('Your document') else gr.skip()}
         except Exception as exc:
             if session.current(revision):
-                yield {**clear_plan(), status: f'Plan failed: {exc}. Review and retry; no sample plan was substituted.'}
+                yield {status: f'Plan failed: {exc}. Previous results are unchanged. Review and retry; no sample plan was substituted.'}
         finally:
             session.finish()
 
@@ -403,9 +414,7 @@ def build_model_workflow(reader, navigation, source):
         except BackendError as exc:
             yield {status: str(exc)}
             return
-        targets = {'preview': {calendar_state: {}, calendar_preview: [['', '', '', '']], calendar_confirm: gr.update(value=False, interactive=False), calendar_download: None, calendar_message: 'Checking notice dates…', calendar_details: None, export_calendar: gr.update(interactive=False)},
-                   'calendar': {calendar_download: None}, 'checklist': {plan_download: None}, 'directory': {directory_result: None}}
-        yield {**targets[operation], status: 'Working…'}
+        yield {status: 'Working… Previous results remain available.'}
         try:
             if operation == 'preview':
                 result = client.calendar_preview(data)
@@ -414,7 +423,7 @@ def build_model_workflow(reader, navigation, source):
                 message = (f'{len(events)} all-day event(s) ready for review.' if events else 'No usable confirmed dates. Correct dates and resolve date uncertainties on Review before exporting.')
                 if result.get('warnings'):
                     message += '\n' + '\n'.join(result['warnings'])
-                updates = {calendar_state: result, calendar_preview: rows or [['', '', '', '']], calendar_details: result, calendar_message: message, calendar_confirm: gr.update(value=False, interactive=bool(events)), export_calendar: gr.update(interactive=False)}
+                updates = {calendar_state: result, calendar_preview: rows or [['', '', '', '']], calendar_details: result, calendar_download: None, calendar_message: message, calendar_confirm: gr.update(value=False, interactive=bool(events)), export_calendar: gr.update(interactive=False)}
             elif operation == 'calendar':
                 if not checked or not preview or not preview.get('events'):
                     raise BackendError('Preview dates and confirm them first. Missing dates cannot be exported.')
@@ -427,32 +436,38 @@ def build_model_workflow(reader, navigation, source):
                 yield {**updates, status: 'Request completed.'}
         except Exception as exc:
             if session.current(revision):
-                yield {**targets[operation], calendar_message: f'Calendar request failed: {exc}' if operation in {'preview', 'calendar'} else gr.skip(), status: f'Request failed: {exc}'}
+                yield {calendar_message: f'Calendar request failed: {exc}' if operation in {'preview', 'calendar'} else gr.skip(), status: f'Request failed: {exc}. Previous results are unchanged.'}
         finally:
             session.finish()
 
     # All long model calls serialize. Input edits run immediately and invalidate late responses.
     opts = {'concurrency_id': 'backend-workflow', 'concurrency_limit': 1, 'trigger_mode': 'once'}
     for button, fn, inputs in [
-        (analyze_file, run_file, [reader['upload'], language, request_session, source]),
-        (analyze_text, run_text, [pasted, language, request_session, source]),
-        (analyze_saved, run_text, [reader['combined'], language, request_session, source])]:
+        (analyze_file, run_file, [reader['upload'], language, request_session, source, workspace]),
+        (analyze_text, run_text, [pasted, language, request_session, source, workspace]),
+        (analyze_saved, run_text, [reader['combined'], language, request_session, source, workspace])]:
         button.click(fn, inputs, output_components, **opts)
-    generate.click(generate_plan, [record, confirmed, language, request_session, *editors, *primary], output_components, **opts)
+    generate.click(generate_plan, [record, confirmed, language, request_session, workspace, analysis_key, *editors, *primary], output_components, **opts)
     reader['upload'].change(invalidate_input, request_session, output_components, queue=False)
-    for component in [pasted, language, source]:
+    for component in [pasted, language]:
         component.input(invalidate_input, request_session, output_components, queue=False)
-    # A programmatic file removal also clears model state.
+    # File selection and view changes do not clear a successful dataset.
     reader['upload'].clear(invalidate_input, request_session, output_components, queue=False)
     reader['editor'].input(invalidate_input, request_session, output_components, queue=False)
     reader['combined'].change(invalidate_input, request_session, output_components, queue=False)
+    def reset_document(session, memory):
+        session.invalidate()
+        memory.reset('Your document')
+        return {**clear_all(), status: 'Document workflow reset. Choose a new document.', navigation: gr.Tabs(selected='upload')}
+    reader['reset'].click(reset_document, [request_session, workspace], output_components, queue=False)
+    fact_inputs = [request_session, workspace, record, *editors, *primary]
     for button, table, columns in table_buttons:
         def append_row(rows, cols=columns):
             return add_table_row(rows, cols)
         button.click(append_row, table, table, queue=False).then(
-            invalidate_facts, request_session, output_components, queue=False)
+            invalidate_facts, fact_inputs, output_components, queue=False)
     for component in [*editors, *primary[:9]]:
-        component.input(invalidate_facts, request_session, output_components, queue=False)
+        component.input(invalidate_facts, fact_inputs, output_components, queue=False)
     def changed_confirmation(checked, session):
         session.invalidate()
         return {results_empty: gr.update(visible=True), **clear_plan(), status: 'Ready to generate a plan.' if checked else 'Confirmation cleared.'}
@@ -475,6 +490,6 @@ def build_model_workflow(reader, navigation, source):
         except BackendError as exc:
             return str(exc)
     check.click(health, outputs=status)
-    back_notice.click(lambda: gr.Tabs(selected='upload'), outputs=navigation, queue=False)
-    edit_details.click(lambda: gr.Tabs(selected='review'), outputs=navigation, queue=False)
-    return {'record': record, 'plan': plan, 'status': status}
+    back_notice.click(lambda memory: gr.Tabs(selected=memory.remember_stage('Your document', 'upload')), workspace, navigation, queue=False)
+    edit_details.click(lambda memory: gr.Tabs(selected=memory.remember_stage('Your document', 'review')), workspace, navigation, queue=False)
+    return {'record': record, 'plan': plan, 'status': status, 'editors': editors, 'primary': primary, 'session': request_session}

@@ -85,7 +85,7 @@ English requires `eng` data. Hindi + English requires `hin` and `eng`; Kannada +
 1. Choose **Your document**, then drag/drop or select a PDF, PNG, JPG/JPEG, WEBP, BMP, TIFF or GIF on **Upload**. Filename, MIME type and size appear immediately. Images preview immediately; PDF page previews appear after reading.
 2. Open **Reading options** to select an installed OCR language or enable OCR for PDF pages without selectable text. Text PDFs use the text layer without OCR by default.
 3. Click **Extract text**. Progress reports completed PDF pages and OCR stages; it does not fabricate Tesseract recognition percentages. A completed reading opens **Review** automatically.
-4. Select a page, correct its text, and click **Save page corrections** before changing pages. **Save & continue** saves the current page and opens **Results**.
+4. Select a page, correct its text, and click **Save page corrections** before changing pages. **Save page & view results** saves the current page and opens **Results**.
 5. Review the combined text and JSON on **Results** and prepare the JSON download for future integration. No model predictions are generated from this text yet. Choose **Demo sample** to explore example action plans independently.
 6. Cancel stops the reader process and its OCR child process. Removing/replacing a file cancels pending work and clears prior reader output. The mock output panel is unaffected.
 
@@ -141,3 +141,7 @@ Implementation references: [PDFium Python API and process-safety guidance](https
 `app.py` defines the product shell, source selector, shared three-stage navigation and existing notice-to-action controls. `document_ui.py` places the document-reader controls into the same stages without changing extraction. `ui_style.py` owns the shared theme, responsive CSS and stage headings. No new runtime dependency was added for this layout refactor.
 
 All original sample fields, source excerpts, language options, confirmation checks, resource matching, checklist toggles, TXT/ICS downloads and live-adapter hooks remain available. Source switching resets navigation to Upload while preserving each source's independent state. Automatic navigation after extraction is guarded by the currently selected source. With `NOTICEBRIDGE_MODE=live`, the second source is labelled **Model workflow**, and still runs only after the user explicitly starts it.
+
+Review and Results include instructions when no document has been extracted. Page saving, continuing and JSON export become available only after extraction returns a document, including documents that need OCR or manual transcription. The results summary reports extraction status and warnings without claiming that user review is complete. Uploaded text and saved demo action plans are explicitly labelled as separate sources. On Review, **Save page & view results** saves the current page before moving to Results.
+
+If Windows UI tests cannot find `taskkill`, ensure `$env:SystemRoot\System32` is on PATH before running the checks above.

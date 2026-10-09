@@ -68,8 +68,8 @@ SAMPLE_SOURCE = 'Demo sample' if MODE == 'demo' else 'Model workflow'
 
 def switch_source(source):
     real = source == 'Your document'
-    note = ('**Local document reading** · PDF text and image OCR. No model inference.' if real else
-            '**Demo sample** · Saved synthetic results, independent of your uploads.' if MODE == 'demo' else
+    note = ('**Your document** · Extract and review text from a PDF or image. Action plans are not available for uploads yet.' if real else
+            '**Demo sample — saved example data** · Explore an example action plan. These results are not extracted from your uploads.' if MODE == 'demo' else
             '**Model workflow** · Uses the configured model adapter only when you click Read notice.')
     return (*[gr.Group(visible=real) for _ in range(4)],
             *[gr.Group(visible=not real) for _ in range(4)],
@@ -79,9 +79,9 @@ def switch_source(source):
 with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
     original = gr.State({})
     gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">N</div><div><div class="brand-name">NoticeBridge</div><div class="brand-tag">Community information, made clear</div></div></div>')
-    gr.HTML('<div id="hero"><p class="eyebrow">READ · VERIFY · ACT</p><h1>From a notice to your next step.</h1><p class="subtitle">Bring the information that matters into focus. Read your document, review the details, and leave with something useful.</p></div>')
+    gr.HTML('<div id="hero"><p class="eyebrow">READ · VERIFY · ACT</p><h1>Read your notice. Know what comes next.</h1><p class="subtitle">Upload a document, preview it, and review its text. Or explore a saved sample to see an example action plan.</p></div>')
     source = gr.Radio(['Your document', SAMPLE_SOURCE], value='Your document', label='Choose your starting point', elem_id='source-switch')
-    source_note = gr.Markdown('**Local document reading** · PDF text and image OCR. No model inference.', elem_id='source-note')
+    source_note = gr.Markdown('**Your document** · Extract and review text from a PDF or image. Action plans are not available for uploads yet.', elem_id='source-note')
     with gr.Tabs(selected='upload', elem_id='workflow') as navigation:
         with gr.Tab('01  Upload', id='upload') as upload_tab:
             pass
@@ -107,13 +107,14 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
     with review_tab:
         with gr.Group(visible=False) as sample_review:
             stage_intro('Check the important details', 'Review dates, amounts and instructions against the notice. Correct anything that needs attention before creating your plan.')
+            sample_review_empty = gr.Markdown('**No notice details yet.** Go to Upload and click **Read sample** to load the saved example.' if MODE == 'demo' else '**No notice details yet.** Go to Upload and click **Read notice** first.', elem_classes=['empty-state'])
             with gr.Row():
                 with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
                     editors = []
                     for start in [0, 2, 4]:
                         with gr.Row():
                             for key, label in zip(EDIT_KEYS[start:start+2], LABELS[start:start+2]):
-                                editors.append(gr.Textbox(label=label, interactive=True))
+                                editors.append(gr.Textbox(label=label, interactive=True, placeholder='Read the notice first; then review this field.'))
                     for key, label in zip(EDIT_KEYS[6:], LABELS[6:]):
                         editors.append(gr.Textbox(label=label, lines=2, interactive=True))
                 with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
@@ -129,10 +130,11 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
     with results_tab:
         with gr.Group(visible=False) as sample_results:
             stage_intro('Your next steps, in one place', 'A clear explanation, an actionable checklist, and files you can keep.' + (' These results belong to the synthetic sample.' if MODE == 'demo' else ''))
+            sample_results_empty = gr.Markdown('**No action plan yet.** Read the notice on Upload, review and confirm its details, then click **Build my action plan**.', elem_classes=['empty-state'])
             with gr.Row():
                 with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
                     explanation = gr.Textbox(label='What this notice means', lines=7, interactive=False,
-                                             placeholder='Review and confirm the details to create your action plan.')
+                                             placeholder='Review and confirm the details to create your action plan.', elem_classes=['document-text'])
                     tasks = gr.CheckboxGroup(choices=[], label='Your checklist', interactive=True)
                 with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
                     gr.Markdown('### Keep your plan')
@@ -143,7 +145,7 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
                 resources = gr.Dataframe(headers=['Organization', 'Official URL', 'Phone', 'Verified on'], datatype=['str'] * 4, value=[], interactive=False, label='Verified matches')
                 gr.Markdown('Only entries matching your category and region appear. No match means no recommendation.', elem_classes=['quiet-note'])
     with gr.Group(visible=False) as sample_status:
-        status = gr.Textbox(label='Sample workflow status' if MODE == 'demo' else 'Model workflow status', value='Choose a sample and click Read sample.' if MODE == 'demo' else 'Choose a notice to begin.', lines=2, interactive=False)
+        status = gr.Textbox(label='Sample workflow status' if MODE == 'demo' else 'Model workflow status', value='Choose a sample and click Read sample.' if MODE == 'demo' else 'Choose a notice to begin.', lines=2, interactive=False, elem_classes=['workflow-status'])
     gr.Markdown('NoticeBridge · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
     source.input(switch_source, source, [*reader['panels'], sample_upload, sample_review, sample_results, sample_status, navigation, source_note], queue=False)
     plan_outputs = [explanation, tasks, downloads, resources]
@@ -161,6 +163,8 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
         checkbox.input(empty_plan, outputs=plan_outputs, **event_options)
     sample_back.click(lambda: gr.Tabs(selected='upload'), outputs=navigation, queue=False)
     sample_edit.click(lambda: gr.Tabs(selected='review'), outputs=navigation, queue=False)
+    original.change(lambda data: gr.Markdown(visible=not bool(data)), original, sample_review_empty, queue=False)
+    explanation.change(lambda text: gr.Markdown(visible=not bool(text)), explanation, sample_results_empty, queue=False)
 
 if __name__ == '__main__':
     demo.queue().launch(server_name='127.0.0.1', inbrowser=True, css=CSS, theme=THEME)

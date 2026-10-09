@@ -139,3 +139,5 @@ configurable through `DEADLENSE_CORS_ORIGINS`.
 The supplied `data/directory.json` is fictional demo campus data. Its timestamps are supplied
 metadata, not independent verification. Hindi is requested through existing prompt fields;
 there is no separate translation service or verified Hindi quality guarantee.
+
+Office uploads: `/api/analyze` accepts DOCX, PPTX, and legacy PPT using the existing multipart `file` field. Responses retain the Notice schema. `source.kind` adds `docx`, `pptx`, or `ppt`; `source.pages` counts Word content blocks or slides; additive `source.warnings` explains omitted content/blank slides. Evidence uses `paragraph N`, `table N`, or `slide N` references. Legacy PPT requires local LibreOffice (`LIBREOFFICE_CMD` optional).

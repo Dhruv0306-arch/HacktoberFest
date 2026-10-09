@@ -8,6 +8,7 @@ from typing import List, Optional
 
 from pypdf import PdfReader
 from PIL import Image, ImageOps, UnidentifiedImageError
+from office_reader import OFFICE_EXTENSIONS, OFFICE_MIME, OfficeError, read_office
 
 from .config import MAX_IMAGES, MAX_TEXT_CHARS, MAX_UPLOAD_BYTES
 
@@ -27,6 +28,7 @@ class IngestError(ValueError):
 class Page:
     number: int
     text: str
+    reference: str = ""
 
 
 @dataclass
@@ -39,6 +41,7 @@ class Source:
     text: str = ""
     scanned: bool = False          # PDF with no extractable text
     truncated: bool = False
+    warnings: List[str] = field(default_factory=list)
 
     @property
     def source_ref(self) -> str:
@@ -46,6 +49,8 @@ class Source:
             return "image"
         if self.kind == "pdf":
             return "page 1"
+        if self.pages and self.pages[0].reference:
+            return self.pages[0].reference
         return "pasted text"
 
     @property
@@ -61,6 +66,7 @@ class Source:
             "images": len(self.images),
             "scanned": self.scanned,
             "truncated": self.truncated,
+            "warnings": self.warnings,
         }
 
 
@@ -148,13 +154,27 @@ def read_upload(filename: str, content_type: str, data: bytes) -> Source:
     ext = "." + lowered.rsplit(".", 1)[-1] if "." in lowered else ""
     ctype = (content_type or "").split(";")[0].strip().lower()
 
+    if ext in OFFICE_EXTENSIONS:
+        allowed = {OFFICE_MIME[ext], "application/octet-stream", "application/zip", ""}
+        if ext in {".ppt", ".pptx"}:
+            allowed.update({"application/mspowerpoint", "application/x-mspowerpoint", "application/vnd.ms-powerpoint"})
+        if ctype not in allowed:
+            raise IngestError("File MIME type does not match its Office extension.")
+        try:
+            content = read_office(filename, data, max_bytes=MAX_UPLOAD_BYTES, max_chars=MAX_TEXT_CHARS)
+        except OfficeError as exc:
+            raise IngestError(str(exc)) from exc
+        return Source(kind=content.kind, filename=filename, content_type=OFFICE_MIME[ext],
+                      pages=[Page(p.number, p.text, p.reference) for p in content.parts],
+                      text=content.text, warnings=content.warnings)
+
     if ctype in IMAGE_MIMES or ext in IMAGE_EXTS:
         return _from_image(filename or "notice", ctype, data)
     if ctype in PDF_MIMES or ext == ".pdf":
         return _from_pdf(filename or "notice.pdf", data)
     if ext == ".txt" or (not ext and ctype == "text/plain"):
         return _from_text(filename or "notice.txt", ctype, data)
-    raise IngestError("Unsupported file type. Use PDF, a supported image, or TXT.")
+    raise IngestError("Unsupported file type. Use PDF, an image, TXT, DOCX, PPTX or PPT.")
 
 
 def from_text(text: str) -> Source:
@@ -183,6 +203,12 @@ def document_block(source: Source) -> str:
     body, truncated = _truncate(source.text)
     source.truncated = source.truncated or truncated
 
+    if source.kind in {"docx", "pptx", "ppt"}:
+        warnings = "\n".join(source.warnings)
+        return (f'Document "{source.filename}" ({source.kind}). Text in document order:\n\n{body}\n\n'
+                f'Reading limitations: {warnings}\nUse the exact bracketed slide, paragraph or table labels as source_ref. '
+                'Empty slides are not evidence. Do not infer their content.')
+
     if source.kind == "pdf":
         header = f'PDF notice "{source.filename}", {source.page_count} page(s).'
         if source.scanned:
@@ -207,4 +233,6 @@ def source_ref_for(source: Source, page_hint: Optional[int] = None) -> str:
         return "image"
     if source.kind == "pdf":
         return f"page {page_hint}" if page_hint else "page 1"
+    if source.kind in {"docx", "pptx", "ppt"}:
+        return next((p.reference for p in source.pages if p.number == page_hint), source.source_ref)
     return "pasted text"

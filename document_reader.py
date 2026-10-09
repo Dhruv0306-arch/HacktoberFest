@@ -17,6 +17,7 @@ import time
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 import pypdfium2 as pdfium
+from office_reader import OFFICE_EXTENSIONS, OFFICE_MIME, OfficeError, read_office
 
 
 def _limit(name, default):
@@ -33,11 +34,13 @@ MAX_PIXELS = _limit('NOTICEBRIDGE_MAX_IMAGE_PIXELS', 25_000_000)
 MAX_TEXT = _limit('NOTICEBRIDGE_MAX_TEXT_CHARS', 500_000)
 OCR_TIMEOUT = _limit('NOTICEBRIDGE_OCR_TIMEOUT', 60)
 READ_TIMEOUT = _limit('NOTICEBRIDGE_READ_TIMEOUT', 180)
-EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff', '.gif']
+EXTENSIONS = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff', '.gif', '.txt', '.docx', '.pptx', '.ppt']
 LANGUAGES = {'English': 'eng', 'Hindi + English': 'hin+eng', 'Kannada + English': 'kan+eng'}
 MIME = {'.pdf': 'application/pdf', '.png': 'image/png', '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.bmp': 'image/bmp',
         '.tif': 'image/tiff', '.tiff': 'image/tiff', '.gif': 'image/gif'}
+MIME.update(OFFICE_MIME)
+MIME['.txt'] = 'text/plain'
 
 
 class DocumentError(ValueError):
@@ -46,13 +49,13 @@ class DocumentError(ValueError):
 
 def file_info(path):
     if not path:
-        raise DocumentError('Select a PDF or notice image first.')
+        raise DocumentError('Select a PDF, image, TXT, DOCX, PPTX or PPT first.')
     path = Path(path)
     if not path.is_file():
         raise DocumentError('The selected file is no longer available. Upload it again.')
     suffix = path.suffix.lower()
     if suffix not in EXTENSIONS:
-        raise DocumentError('Unsupported format. Use PDF, PNG, JPG, WEBP, BMP, TIFF or GIF.')
+        raise DocumentError('Unsupported format. Use PDF, PNG, JPG, WEBP, BMP, TIFF, GIF, TXT, DOCX, PPTX or PPT.')
     size = path.stat().st_size
     if size == 0:
         raise DocumentError('The selected file is empty (0 bytes). Upload a complete file.')
@@ -125,7 +128,7 @@ def _page(number, text, method, status, preview):
 def assemble(result):
     pages = result['pages']
     readable = sum(_readable(p['text']) for p in pages)
-    result['extractedText'] = '\n\n'.join(f"--- Page {p['pageNumber']} ---\n{p['text']}" for p in pages)
+    result['extractedText'] = '\n\n'.join(f"--- {p.get('sourceRef', 'Page ' + str(p['pageNumber']))} ---\n{p['text']}" for p in pages)
     result['extractionStatus'] = ('success' if readable == len(pages) and readable else
                                   'partial' if readable else
                                   'ocr_required' if any(p['extractionStatus'] == 'ocr_required' for p in pages) else 'no_text')
@@ -151,7 +154,37 @@ def read_document(path, workdir, language='eng', ocr_scans=False, progress=None)
     result = {**info, 'schemaVersion': 1, 'pages': [], 'warnings': [], 'edited': False,
               'modelInferencePerformed': False}
     path = Path(path)
-    if path.suffix.lower() == '.pdf':
+    if path.suffix.lower() in OFFICE_EXTENSIONS:
+        report('Reading Office document text locally.', 0.1)
+        try:
+            content = read_office(path.name, path.read_bytes(), max_bytes=MAX_BYTES,
+                                  max_chars=MAX_TEXT, max_slides=MAX_PAGES, temporary_root=workdir)
+        except OfficeError as exc:
+            raise DocumentError(str(exc)) from exc
+        result['warnings'].extend(content.warnings)
+        if content.kind == 'docx':
+            result['pages'].append(_page(1, content.text, 'docx_text', 'success', None))
+            result['pages'][0]['sourceRef'] = 'Word document · paragraph/table references'
+        else:
+            for part in content.parts:
+                status = 'success' if _readable(part.text) else 'no_text'
+                page = _page(part.number, part.text, 'ppt_conversion_text' if content.kind == 'ppt' else 'pptx_text', status, None)
+                page['sourceRef'] = part.reference
+                result['pages'].append(page)
+    elif path.suffix.lower() == '.txt':
+        data = path.read_bytes()
+        for encoding in ('utf-8-sig', 'utf-16', 'latin-1'):
+            try:
+                text = _clean(data.decode(encoding))
+                break
+            except UnicodeDecodeError:
+                continue
+        if not _readable(text):
+            raise DocumentError('The text file contains no readable text.')
+        if len(text) > MAX_TEXT:
+            raise DocumentError('Text exceeds the character limit. Split the file.')
+        result['pages'].append(_page(1, text, 'plain_text', 'success', None))
+    elif path.suffix.lower() == '.pdf':
         with path.open('rb') as stream:
             if b'%PDF-' not in stream.read(1024):
                 raise DocumentError('This file is not a valid PDF. Re-export it from the original source.')
@@ -257,7 +290,7 @@ def apply_page_edits(result, texts):
         page['edited'] = page['text'] != page['originalText']
         page.pop('previewPath', None)
     output['edited'] = any(p['edited'] for p in output['pages'])
-    output['extractedText'] = '\n\n'.join(f"--- Page {p['pageNumber']} ---\n{p['text']}" for p in output['pages'])
+    output['extractedText'] = '\n\n'.join(f"--- {p.get('sourceRef', 'Page ' + str(p['pageNumber']))} ---\n{p['text']}" for p in output['pages'])
     output['hasReadableText'] = any(_readable(p['text']) for p in output['pages'])
     output['reviewStatus'] = 'user_edited' if output['edited'] else 'not_edited'
     output['modelInferencePerformed'] = False

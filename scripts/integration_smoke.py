@@ -28,7 +28,12 @@ try:
     client = Client('http://127.0.0.1:7867', verbose=False)
     assert 'Backend connected' in client.predict(api_name='/health')
     print('PASS: Gradio startup and HTTP backend connection')
-    for filename in ['tests/fixtures/multipage.pdf', 'fixtures/notice.png']:
+    from office_reader import libreoffice_path
+    uploads = ['tests/fixtures/multipage.pdf', 'fixtures/notice.png',
+               'tests/fixtures/office_notice.docx', 'tests/fixtures/office_notice.pptx']
+    if libreoffice_path():
+        uploads.append('tests/fixtures/office_notice.ppt')
+    for filename in uploads:
         result = client.predict(handle_file(str(ROOT / filename)), 'English', 'Your document', api_name='/run_file')
         assert result[0] == 'Scholarship notice', str(result)[:500]
         print('PASS: real UI upload -> backend ingestion -> controlled inference -> editable facts:', filename)

@@ -123,7 +123,7 @@ async def analyze(
     elif text and text.strip():
         record = await analyze_service.analyze_text(text, question)
     else:
-        raise IngestError("provide a file (image/PDF) or a text field")
+        raise IngestError("provide a file (PDF/image/TXT/DOCX/PPTX/PPT) or a text field")
     return record
 
 

@@ -333,7 +333,10 @@ def build_model_workflow(reader, navigation, source):
             if not session.current(revision):
                 return
             src = data.get('source', {})
-            description = f"Analysis {data['id']} · {src.get('filename', '')} · {src.get('kind', '')} · {src.get('pages', '?')} page(s)"
+            unit = 'slide(s)' if src.get('kind') in {'ppt', 'pptx'} else 'content block(s)' if src.get('kind') == 'docx' else 'page(s)'
+            description = f"Analysis {data['id']} · {src.get('filename', '')} · {src.get('kind', '')} · {src.get('pages', '?')} {unit}"
+            if src.get('warnings'):
+                description += '\n' + '\n'.join(str(w) for w in src['warnings'])
             yield {record: data, **dict(zip(editors, notice_values(data))), provenance: description,
                    evidence: data.get('evidence', []), **dict(zip(primary, primary_values(data))), excerpts: source_excerpt_text(data), review_empty: gr.update(visible=False), status: ('Real backend response received. Review facts and uncertainties before confirming.' +
                             (' Some structured details were not returned: ' + ', '.join(field for field in ('dates', 'fees', 'action_items') if not data['notice'].get(field)) + '. Blank rows are not extracted facts.' if any(not data['notice'].get(field) for field in ('dates', 'fees', 'action_items')) else '')),

@@ -64,7 +64,7 @@ class ReaderTests(unittest.TestCase):
                 reader.read_document(target, self.folder / 'out')
 
     def test_unsupported_and_oversized(self):
-        target = self.folder / 'notice.txt'
+        target = self.folder / 'notice.exe'
         target.write_text('hello')
         with self.assertRaisesRegex(reader.DocumentError, 'Unsupported'):
             reader.file_info(target)

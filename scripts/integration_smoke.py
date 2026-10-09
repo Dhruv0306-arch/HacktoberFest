@@ -42,7 +42,8 @@ try:
     fields[3] = 'User-corrected explanation through the real UI.'
     primary = list(result[30:40])
     primary[3] = '2026-11-16'
-    plan = client.predict(True, 'English', *fields, *primary, api_name='/generate_plan')
+    record_id = ui.demo.state_holder[client.session_hash][ui.backend_workflow['record']._id]['id']
+    plan = client.predict(True, 'English', record_id, *fields, *primary, api_name='/generate_plan')
     assert any('User-corrected explanation' in str(item) for item in plan), str(plan)
     assert any('checklist.txt' in str(item) for item in plan), 'Checklist should be ready immediately after generation'
     assert any('Required' in str(item) or 'Submit application' in str(item) for item in plan)
@@ -60,9 +61,11 @@ try:
     from unittest.mock import AsyncMock
     with patch.object(ollama_client, 'structured', AsyncMock(side_effect=ollama_client.OllamaUnavailable('TEST model offline'))):
         failed = client.predict('New notice', 'English', 'Your document', api_name='/run_text')
-    assert failed[0] == ''
+    assert failed[0] == {'__type__': 'update'}
+    saved_record = ui.demo.state_holder[client.session_hash][ui.backend_workflow['record']._id]
+    assert saved_record['notice']['summary'] == 'User-corrected explanation through the real UI.'
     assert any('503' in str(item) for item in failed)
-    print('PASS: model failure clears old facts and reports error; no demo fallback')
+    print('PASS: model failure preserves the last successful facts and reports error; no demo fallback')
     print('All UI smoke checks passed. Gemma inference was mocked, not live.')
 finally:
     if ui is not None:

@@ -54,7 +54,7 @@ On macOS/Linux, activate your environment and use `python -m pip install -r requ
 7. On **Results**, tick required/optional actions, download the plain-text checklist, and optionally preview dates. Calendar download requires a second, explicit date confirmation. Blank or invalid dates are omitted with warnings; all-day end dates are exclusive.
 8. Directory matches include source metadata and last-checked timestamps. **The bundled campus directory is fictional demo data, not a verified official directory.** Replace `data/directory.json` with checked information before using it for real recommendations. The sample's separate `helplines.csv` remains header-only until you add verified entries.
 
-Edits and replacements invalidate previous results and late model responses. Model requests are serialized, with duplicate submissions limited. Replacing input discards its pending result but does not cancel computation already running in Ollama. Use smaller documents if inference times out. The reader's existing Cancel button stops local OCR separately.
+Changing an input discards its pending model response but preserves the last successful results and edits. Fact edits invalidate only derived plans until re-confirmed; navigation and demo switching preserve both workflows. Model requests are serialized, with duplicate submissions limited. Replacing input discards its pending result but does not cancel computation already running in Ollama. Use smaller documents if inference times out. The reader's existing Cancel button stops local OCR separately.
 
 ## Demo mode remains available
 
@@ -133,3 +133,15 @@ Limits: UI uploads 20 MB; presentations 30 slides; backend text 90,000 character
 Office previews show editable extracted text rather than a rendered slide/page image. Text within images, charts, headers, footnotes and speaker notes is not read by the Office parser. Image-only content should be exported as PDF and read with the existing OCR options. Empty slides stay in sequence and are explicitly flagged; documents with no readable text fail without calling the model.
 
 Verification: `python -m unittest discover -s tests -q` and `python scripts/integration_smoke.py`. Integration tests exercise real parsing and real HTTP services with controlled model responses; they do not prove live Gemma accuracy.
+
+## Session persistence
+
+Your document and Demo sample use separate per-browser-session state. Switching views or tabs preserves the existing form values, user edits, checklists and download fields, and returns to the last stage for that view. The shared in-memory workspace keeps the latest raw fact drafts without reloading backend originals during navigation.
+
+Selecting a candidate file does not discard successful extraction. A replacement becomes the active result only after successful reading/analysis. Failed uploads, model calls and empty/unreadable replacement reads preserve the previous successful data. Old source identity/provenance remains visible, so retained results are not presented as output from a failed new input. Explicitly selecting another demo sample loads a new demo dataset independently.
+
+Local page-text edits are retained automatically in session state and saved before queued page changes. Use **New document / reset** to intentionally clear the document workflow. This reset leaves the demo dataset alone. Fact edits still require re-confirmation and regeneration of a derived plan.
+
+Persistence covers navigation during the current session. It adds no browser localStorage or plaintext document-draft files, and does not add refresh/restart restoration. Existing backend JSON analysis storage remains unchanged.
+
+Verify session behavior with `python scripts/persistence_smoke.py`; this uses actual Gradio/FastAPI HTTP with controlled test-only model responses.

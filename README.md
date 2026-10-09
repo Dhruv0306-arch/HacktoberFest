@@ -59,7 +59,7 @@ The original model/demo workflow accepts images only; the independent document r
 
 ## Real document reader (works even in demo mode)
 
-The new panel at the top of the app reads your actual files. The existing saved demo/model panel remains separate and unchanged. The reader never calls `ui_adapter.py`, `model.py`, an OCR website or a prediction API. File bytes travel from the browser to this Python application, which is localhost by default; this is local-host processing, not browser-only processing. Do not enable public hosting for sensitive documents without designing appropriate access controls.
+Choose **Your document** to read actual files, or **Demo sample** to explore the saved notice-to-action workflow. Both use the shared **Upload -> Review -> Results** navigation. Their data and processing remain separate. The reader never calls `ui_adapter.py`, `model.py`, an OCR website or a prediction API. File bytes travel from the browser to this Python application, which is localhost by default; this is local-host processing, not browser-only processing. Do not enable public hosting for sensitive documents without designing appropriate access controls.
 
 ### Install / launch on Windows
 
@@ -82,11 +82,11 @@ English requires `eng` data. Hindi + English requires `hin` and `eng`; Kannada +
 
 ### Use
 
-1. Drag/drop or select a PDF, PNG, JPG/JPEG, WEBP, BMP, TIFF or GIF in **Read a real document**. Filename, MIME type and size appear immediately. Images preview immediately; PDF page previews appear after reading.
-2. Select an installed OCR language. Enable **Also OCR PDF pages without selectable text** only when needed. Text PDFs use the text layer without OCR by default.
-3. Click **Extract readable text / Retry**. Progress reports completed PDF pages and OCR stages; it does not fabricate Tesseract recognition percentages.
-4. Select a page, correct its text, and click **Save this page's corrections** before changing pages or exporting.
-5. Review the combined text and JSON. Download the saved JSON for future integration. No model predictions are generated from this text yet.
+1. Choose **Your document**, then drag/drop or select a PDF, PNG, JPG/JPEG, WEBP, BMP, TIFF or GIF on **Upload**. Filename, MIME type and size appear immediately. Images preview immediately; PDF page previews appear after reading.
+2. Open **Reading options** to select an installed OCR language or enable OCR for PDF pages without selectable text. Text PDFs use the text layer without OCR by default.
+3. Click **Extract text**. Progress reports completed PDF pages and OCR stages; it does not fabricate Tesseract recognition percentages. A completed reading opens **Review** automatically.
+4. Select a page, correct its text, and click **Save page corrections** before changing pages. **Save & continue** saves the current page and opens **Results**.
+5. Review the combined text and JSON on **Results** and prepare the JSON download for future integration. No model predictions are generated from this text yet. Choose **Demo sample** to explore example action plans independently.
 6. Cancel stops the reader process and its OCR child process. Removing/replacing a file cancels pending work and clears prior reader output. The mock output panel is unaffected.
 
 ### Integration boundary
@@ -135,3 +135,9 @@ Temporary previews/OCR files live under `outputs/document-reader/`; replacing/re
 Tests include real PDF text extraction, multi-page order, scanned/blank/protected PDFs, actual image and scanned-PDF OCR, invalid/empty/oversized files, edit provenance, cancellation/replacement and the original mock checklist/calendar workflow. OCR tests are skipped if Tesseract is unavailable. The small fixtures are synthetic; `protected.pdf` uses password `test-password`. The existing project has no lint, static type-check or frontend build configuration.
 
 Implementation references: [PDFium Python API and process-safety guidance](https://pypdfium2.readthedocs.io/en/stable/python_api.html), [Tesseract CLI](https://tesseract-ocr.github.io/tessdoc/Command-Line-Usage.html).
+
+## Unified interface
+
+`app.py` defines the product shell, source selector, shared three-stage navigation and existing notice-to-action controls. `document_ui.py` places the document-reader controls into the same stages without changing extraction. `ui_style.py` owns the shared theme, responsive CSS and stage headings. No new runtime dependency was added for this layout refactor.
+
+All original sample fields, source excerpts, language options, confirmation checks, resource matching, checklist toggles, TXT/ICS downloads and live-adapter hooks remain available. Source switching resets navigation to Upload while preserving each source's independent state. Automatic navigation after extraction is guarded by the currently selected source. With `NOTICEBRIDGE_MODE=live`, the second source is labelled **Model workflow**, and still runs only after the user explicitly starts it.

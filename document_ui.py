@@ -202,50 +202,86 @@ def download_result(result):
     return str(target)
 
 
-def build_document_reader():
-    with gr.Accordion('Read a real document — PDF text / image OCR', open=True):
-        gr.Markdown('Upload your own notice here. **This reader is independent of the demo/model workflow below.** Files are processed on this local Python app; no document is sent to an external OCR service.')
-        session = gr.State(value=ReaderSession, time_to_live=3600,
-                           delete_callback=lambda value: value.cancel())
-        result = gr.State({})
-        with gr.Row():
-            with gr.Column():
-                upload = gr.File(label=f'PDF or image · up to {MAX_BYTES // (1024 * 1024)} MB',
-                                 file_types=EXTENSIONS, type='filepath')
-                metadata = gr.Textbox(label='Selected file', interactive=False)
-                language = gr.Dropdown(list(LANGUAGES), value='English', label='OCR language (installed Tesseract language packs required)')
-                scans = gr.Checkbox(label='Also OCR PDF pages without selectable text (slower)', value=False)
-                with gr.Row():
-                    run = gr.Button('Extract readable text / Retry', variant='primary')
-                    stop = gr.Button('Cancel reading')
-                    remove = gr.Button('Remove file')
-                status = gr.Textbox(label='Document reader status / progress', value='Select a PDF or notice image to start.', lines=3, interactive=False)
-                previews = gr.Gallery(label='Document preview — pages in order', columns=2, height=400, interactive=False)
-            with gr.Column():
-                page = gr.Dropdown(choices=[], label='Page to review', interactive=True)
-                editor = gr.Textbox(label='Editable page text', lines=12, interactive=True,
-                                    placeholder='Extract text first, then correct it here. Save before changing pages.')
-                save = gr.Button('Save this page’s corrections')
-                gr.Markdown('Save corrections before switching pages or downloading. Original OCR/PDF text remains in the JSON for comparison.')
-                combined = gr.Textbox(label='Saved document text — page boundaries preserved', lines=8, interactive=False)
-                with gr.Accordion('Structured handoff for future model integration', open=False):
-                    payload = gr.JSON(label='Document reading result — not model predictions')
-                export = gr.Button('Download saved text as JSON')
-                download = gr.File(label='Document JSON', interactive=False)
-        outputs = [result, metadata, previews, page, editor, combined, payload, download, status]
-        read_event = run.click(process_document, [upload, language, scans, session], outputs,
-                               concurrency_limit=2, trigger_mode='once')
-        upload.change(select_document, [upload, session], outputs, queue=False, cancels=[read_event])
+def build_document_reader(upload_tab, review_tab, results_tab, navigation, source):
+    """Render the real-document source into the shared three-stage workspace."""
+    from ui_style import stage_intro
+    session = gr.State(value=ReaderSession, time_to_live=3600,
+                       delete_callback=lambda value: value.cancel())
+    result = gr.State({})
+    with upload_tab:
+        with gr.Group() as upload_panel:
+            stage_intro('Start with your notice', 'Upload a PDF or image. Read its text locally, then check the details at your own pace.')
+            with gr.Row(equal_height=True):
+                with gr.Column(scale=4, min_width=280, elem_classes=['surface']):
+                    upload = gr.File(label=f'Choose or drop a document · {MAX_BYTES // (1024 * 1024)} MB max',
+                                     file_types=EXTENSIONS, type='filepath', height=180)
+                    metadata = gr.Textbox(label='Selected file', interactive=False)
+                    with gr.Accordion('Reading options', open=False):
+                        language = gr.Dropdown(list(LANGUAGES), value='English', label='OCR language')
+                        scans = gr.Checkbox(label='OCR PDF pages without selectable text', value=False)
+                        gr.Markdown('Image OCR needs local Tesseract and the selected language packs. Text PDFs work without OCR.', elem_classes=['quiet-note'])
+                    run = gr.Button('Extract text →', variant='primary')
+                    with gr.Row():
+                        stop = gr.Button('Cancel reading', size='sm')
+                        remove = gr.Button('Remove file', size='sm')
+                with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
+                    gr.Markdown('### Document preview')
+                    previews = gr.Gallery(label='Pages in document order', columns=2, height=400, interactive=False)
+                    gr.Markdown('Images appear on selection. PDF pages appear after extraction.', elem_classes=['quiet-note'])
+    with review_tab:
+        with gr.Group() as review_panel:
+            stage_intro('Make sure it reads right', 'Review each page and correct anything misread. Your original extracted text is preserved.')
+            with gr.Row():
+                with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
+                    page = gr.Dropdown(choices=[], label='Page', interactive=True)
+                    editor = gr.Textbox(label='Editable page text', lines=14, interactive=True,
+                                        placeholder='Your extracted text will appear here. Upload a document to get started.')
+                    save = gr.Button('Save page corrections', variant='primary')
+                    gr.Markdown('Save before switching pages. Continue also saves the current page.', elem_classes=['quiet-note'])
+                with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
+                    gr.Markdown('### All pages at a glance')
+                    combined = gr.Textbox(label='Saved document text', lines=14, interactive=False)
+                    gr.Markdown('Page boundaries stay intact. Empty pages are flagged rather than filled with guessed text.', elem_classes=['quiet-note'])
+            with gr.Row():
+                back = gr.Button('← Back to upload')
+                ready = gr.Button('Save & continue →', variant='primary')
+    with results_tab:
+        with gr.Group() as results_panel:
+            stage_intro('Your document, ready for the next step', 'Export the reviewed text for future model processing. No predictions or action plan have been generated from this upload.')
+            with gr.Row():
+                with gr.Column(scale=6, min_width=280, elem_classes=['surface']):
+                    gr.Markdown('### Reviewed document')
+                    result_text = gr.Textbox(label='Saved text', lines=12, interactive=False)
+                    with gr.Accordion('Structured result & original text', open=False):
+                        payload = gr.JSON(label='Document reading result')
+                with gr.Column(scale=4, min_width=260, elem_classes=['surface']):
+                    gr.Markdown('### Take your text with you')
+                    gr.Markdown('The JSON includes your corrections, original text, page order, and extraction status. Model integration is pending.', elem_classes=['quiet-note'])
+                    export = gr.Button('Prepare JSON download', variant='primary')
+                    download = gr.File(label='Document JSON', interactive=False)
+                    edit_again = gr.Button('← Return to review')
+    with gr.Group() as status_panel:
+        status = gr.Textbox(label='Document reading status', value='Ready when you are. Choose a PDF or image to begin.', lines=2, interactive=False)
+    outputs = [result, metadata, previews, page, editor, combined, payload, download, status]
+    read_event = run.click(process_document, [upload, language, scans, session], outputs,
+                           concurrency_limit=2, trigger_mode='once')
+    read_event.then(lambda data, current: gr.Tabs(selected='review') if data and current == 'Your document' else gr.skip(), [result, source], navigation)
+    upload.change(select_document, [upload, session], outputs, queue=False, cancels=[read_event])
 
-        def cancel(session):
-            session.cancel()
-            return _clear('Reading cancelled. Choose Extract readable text / Retry to start again.')
+    def cancel(session):
+        session.cancel()
+        return _clear('Reading cancelled. Click Extract text to retry.')
 
-        stop.click(cancel, session, outputs, queue=False, cancels=[read_event])
-        remove.click(lambda session: (session.cancel(), None)[1], session, upload, queue=False, cancels=[read_event])
-        page.input(load_page, [result, page], editor)
-        save.click(save_page, [result, page, editor], [result, combined, payload, download, status])
-        editor.input(lambda: (None, 'Unsaved page edits. Click Save this page’s corrections before switching pages or downloading.'),
-                     outputs=[download, status], queue=False)
-        export.click(download_result, result, download)
-    return result
+    stop.click(cancel, session, outputs, queue=False, cancels=[read_event])
+    remove.click(lambda session: (session.cancel(), None)[1], session, upload, queue=False, cancels=[read_event])
+    page.input(load_page, [result, page], editor)
+    save.click(save_page, [result, page, editor], [result, combined, payload, download, status])
+    editor.input(lambda: (None, 'Unsaved page edits. Save before switching pages or exporting.'), outputs=[download, status], queue=False)
+    export.click(download_result, result, download)
+    combined.change(lambda text: text, combined, result_text, queue=False)
+    ready.click(save_page, [result, page, editor], [result, combined, payload, download, status]).success(
+        lambda: gr.Tabs(selected='results'), outputs=navigation)
+    back.click(lambda: gr.Tabs(selected='upload'), outputs=navigation, queue=False)
+    edit_again.click(lambda: gr.Tabs(selected='review'), outputs=navigation, queue=False)
+    return {'result': result, 'panels': [upload_panel, review_panel, results_panel, status_panel],
+            'session': session, 'read_event': read_event}

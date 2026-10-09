@@ -50,6 +50,16 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(result[0], {})
         self.assertIn('Could not start', result[-1])
 
+    def test_source_navigation_preserves_separation(self):
+        real = app.switch_source('Your document')
+        sample = app.switch_source(app.SAMPLE_SOURCE)
+        self.assertTrue(all(group.visible for group in real[:4]))
+        self.assertTrue(all(not group.visible for group in real[4:8]))
+        self.assertTrue(all(not group.visible for group in sample[:4]))
+        self.assertTrue(all(group.visible for group in sample[4:8]))
+        self.assertEqual(real[8].selected, 'upload')
+        self.assertEqual(sample[8].selected, 'upload')
+
     def test_original_mock_workflow_unchanged(self):
         extracted = app.read_notice(app.sample_path('Clean notice'), 'Clean notice')
         self.assertEqual(len(extracted), len(app.extraction_outputs))

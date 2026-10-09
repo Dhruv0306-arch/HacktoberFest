@@ -1,0 +1,13 @@
+{
+  "title": "Semester Fee Notice",
+  "doc_type": "college_fee",
+  "issuer": "Demo College",
+  "deadline": "2026-10-20",
+  "deadline_original": "Pay by 20 October 2026",
+  "amount": "INR 2500",
+  "eligibility": ["Second-year students"],
+  "required_actions": ["Pay the semester fee at the accounts office during its stated opening hours."],
+  "documents_needed": ["Student ID"],
+  "source_evidence": ["Second-year students must pay INR 2500.", "Pay by 20 October 2026", "Bring your student ID.", "Office hours: Monday-Friday, 10 AM-4 PM."],
+  "unclear_fields": []
+}

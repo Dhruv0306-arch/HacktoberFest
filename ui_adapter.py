@@ -1,13 +1,10 @@
-"""Only this file knows how to call Utkarsh's model module."""
-import importlib
+"""Saved sample adapter only. Real inference lives in backend_client.py."""
 import json
 import os
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
-MODE = os.environ.get('NOTICEBRIDGE_MODE', 'demo').lower()
-if MODE not in {'demo', 'live'}:
-    raise ValueError('NOTICEBRIDGE_MODE must be demo or live')
+MODE = 'demo'  # Real uploads always use FastAPI, regardless of legacy NOTICEBRIDGE_MODE.
 SCALARS = ['title', 'doc_type', 'issuer', 'deadline', 'deadline_original', 'amount']
 LISTS = ['eligibility', 'required_actions', 'documents_needed', 'source_evidence', 'unclear_fields']
 
@@ -38,7 +35,7 @@ def extract_notice(image_path, sample='Clean notice'):
             data['source_evidence'] = ['Second-year students must pay INR 2500.', 'Bring your student ID.']
             data['unclear_fields'] = ['deadline: unreadable in this sample; check with the issuer.']
     else:
-        data = importlib.import_module('model').extract_notice(str(image_path))
+        raise ValueError('Use Your document for real backend processing.')
     return normalize(data)
 
 def build_guidance(confirmed_fields, language):
@@ -54,7 +51,7 @@ def build_guidance(confirmed_fields, language):
         if d['documents_needed']:
             result['checklist'].append('Prepare: ' + ', '.join(d['documents_needed']))
     else:
-        result = importlib.import_module('model').build_guidance(confirmed_fields, language)
+        raise ValueError('Use Your document for real backend processing.')
     if not isinstance(result, dict) or not isinstance(result.get('explanation'), str):
         raise ValueError('Guidance must contain a text explanation.')
     checklist = result.get('checklist')

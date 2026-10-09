@@ -99,7 +99,7 @@ def main():
         check("ics rejects empty events", True)
 
     # --- ingestion ------------------------------------------------------------
-    src_img = read_upload("a.png", "image/png", b"\x89PNG fake image bytes")
+    src_img = read_upload("a.png", "image/png", (Path(__file__).resolve().parents[1] / "fixtures/notice.png").read_bytes())
     check("image upload becomes base64 image source", src_img.kind == "image" and len(src_img.images) == 1)
     try:
         read_upload("a.pdf", "application/pdf", b"not a real pdf")

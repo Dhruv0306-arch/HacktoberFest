@@ -7,13 +7,14 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from pypdf import PdfReader
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from .config import MAX_IMAGES, MAX_TEXT_CHARS, MAX_UPLOAD_BYTES
 
 log = logging.getLogger("notice.backend.ingest")
 logging.getLogger("pypdf").setLevel(logging.ERROR)  # 'invalid pdf header' noise on bad uploads
 
-IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff"}
 IMAGE_MIMES = {"image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"}
 PDF_MIMES = {"application/pdf"}
 
@@ -78,6 +79,12 @@ def _from_pdf(filename: str, data: bytes) -> Source:
     except Exception as exc:  # pypdf raises a grab-bag of errors
         raise IngestError(f"could not read PDF: {exc}") from exc
 
+    if reader.is_encrypted:
+        raise IngestError("Password-protected PDF: upload an unlocked copy.")
+    if not reader.pages:
+        raise IngestError("PDF has no pages.")
+    if len(reader.pages) > 30:
+        raise IngestError("PDF exceeds 30 pages. Split the document first.")
     pages = []
     for index, page in enumerate(reader.pages, start=1):
         try:
@@ -90,13 +97,32 @@ def _from_pdf(filename: str, data: bytes) -> Source:
     source = Source(kind="pdf", filename=filename, content_type="application/pdf", pages=pages)
     source.text = "\n".join(f"[page {p.number}]\n{p.text}" for p in pages if p.text)
     extractable = sum(len(p.text) for p in pages)
-    source.scanned = bool(pages) and extractable < 40 * len(pages)
+    source.scanned = not extractable
+    if source.scanned:
+        raise IngestError("PDF has no selectable text. Enable scanned-page OCR in Reading options, review and save the text, then choose Analyze saved text.")
+    if any(not page.text for page in pages):
+        raise IngestError("Some PDF pages have no selectable text. Use scanned-page OCR, review all pages, then Analyze saved text to avoid omitting pages.")
+    if len(source.text) > MAX_TEXT_CHARS:
+        raise IngestError("PDF text exceeds the configured limit. Split the document.")
     return source
 
 
 def _from_image(filename: str, content_type: str, data: bytes) -> Source:
     if len(data) > MAX_UPLOAD_BYTES:
         raise IngestError(f"image larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            if image.width * image.height > 25_000_000:
+                raise IngestError("Image exceeds 25 million pixels. Resize it first.")
+            if getattr(image, "n_frames", 1) > 1:
+                raise IngestError("Multi-frame image: upload each page as a separate image or PDF.")
+            image.load()
+            normalized = ImageOps.exif_transpose(image).convert("RGB")
+            output = io.BytesIO()
+            normalized.save(output, format="PNG")
+            data = output.getvalue()
+    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+        raise IngestError("Cannot decode this image. Upload a valid PNG/JPG.") from exc
     return Source(
         kind="image",
         filename=filename,
@@ -108,6 +134,7 @@ def _from_image(filename: str, content_type: str, data: bytes) -> Source:
 
 def _from_text(filename: str, content_type: str, data: bytes) -> Source:
     text = _decode(data)
+    from_text(text)
     return Source(kind="text", filename=filename, content_type=content_type, text=text)
 
 
@@ -125,12 +152,16 @@ def read_upload(filename: str, content_type: str, data: bytes) -> Source:
         return _from_image(filename or "notice", ctype, data)
     if ctype in PDF_MIMES or ext == ".pdf":
         return _from_pdf(filename or "notice.pdf", data)
-    return _from_text(filename or "notice.txt", ctype, data)
+    if ext == ".txt" or (not ext and ctype == "text/plain"):
+        return _from_text(filename or "notice.txt", ctype, data)
+    raise IngestError("Unsupported file type. Use PDF, a supported image, or TXT.")
 
 
 def from_text(text: str) -> Source:
     if not text or not text.strip():
         raise IngestError("no text provided")
+    if len(text) > MAX_TEXT_CHARS:
+        raise IngestError("Text exceeds the configured character limit. Split the notice.")
     return Source(kind="text", filename="pasted text", content_type="text/plain", text=text)
 
 

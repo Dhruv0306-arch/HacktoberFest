@@ -10,7 +10,7 @@ from .. import ollama_client as ollama
 from .. import store
 from ..ingest import Source, document_block, from_text, image_payload, read_upload
 from ..prompts import SYSTEM_EXTRACT
-from ..schemas import Notice, to_ollama_schema
+from ..schemas import Notice, MissingInfo, to_ollama_schema
 
 log = logging.getLogger("notice.backend.analyze")
 
@@ -81,7 +81,9 @@ def _coerce_model(data: Dict[str, Any], model: Type[BaseModel]) -> Dict[str, Any
 
 
 def validate(model: Type[BaseModel], data: Dict[str, Any]) -> BaseModel:
-    return model.model_validate(_coerce_model(data or {}, model))
+    if not isinstance(data, dict) or not data or not set(data).intersection(model.model_fields):
+        raise ollama.OllamaError("Model returned no recognizable structured fields. Please retry.")
+    return model.model_validate(_coerce_model(data, model))
 
 
 # --------------------------------------------------------------------------
@@ -219,6 +221,24 @@ async def analyze_text(text: str, question: str = "") -> Dict[str, Any]:
     return await _run(from_text(text), question)
 
 
+def audit_structured_fields(notice: Notice, raw: Dict[str, Any]) -> None:
+    """Flag incomplete structure without deriving new facts from generated prose."""
+    prose = " ".join((notice.summary, notice.answer))
+    indicators = {
+        "dates": bool(re.search(r"\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b", prose, re.I)),
+        "fees": bool(re.search(r"(?:INR|Rs\.?|₹|USD|\$)\s*\d", prose, re.I)),
+        "action_items": bool(notice.required_documents),
+    }
+    existing = {item.field for item in notice.missing}
+    for name in ("dates", "fees", "action_items", "evidence"):
+        malformed = name not in raw or not isinstance(raw.get(name), list)
+        omitted = not getattr(notice, name) and indicators.get(name, False)
+        if (malformed or omitted) and name not in existing:
+            note = ("The model did not return this structured list. Review the source and enter verified details manually."
+                    if malformed else "The model's explanation/documents suggest this detail, but its structured list is empty. Check the source; do not rely on prose for calendar or actions.")
+            notice.missing.append(MissingInfo(field=name, issue="unclear", note=note))
+
+
 async def _run(source: Source, question: str) -> Dict[str, Any]:
     document = document_block(source)
     prompt = "\n".join(
@@ -240,6 +260,10 @@ async def _run(source: Source, question: str) -> Dict[str, Any]:
 
     raw = await ollama.structured(messages, to_ollama_schema(Notice))
     notice = validate(Notice, raw)
+    if not any((notice.title, notice.summary, notice.action_items, notice.missing, notice.needs_clearer_image)):
+        raise ollama.OllamaError("Model returned no readable notice facts or uncertainty information. Please retry with a clearer input.")
+
+    audit_structured_fields(notice, raw)
 
     if source.scanned:
         notice.needs_clearer_image = True

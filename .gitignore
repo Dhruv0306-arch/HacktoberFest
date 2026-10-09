@@ -9,3 +9,7 @@ __pycache__/
 *.pyc
 .env
 outputs/
+
+data/analyses/
+.env.*
+!.env.example

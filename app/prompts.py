@@ -23,7 +23,7 @@ Hard rules:
    `missing` with issue "absent". If it is present but cannot be read (blurry image,
    broken glyphs), add it with issue "unreadable" and set `needs_clearer_image` to true.
    Never silently drop an unreadable deadline.
-6. `action_items` are ordered steps in execution order (4-6 steps), e.g.
+6. `action_items` contain ONLY actions supported by the notice, in execution order, e.g.
    "Check eligibility" -> "Collect these documents" -> "Register before <deadline>".
    Set `required` to false for any step that only concerns an OPTIONAL document or an
    optional activity, so optional steps are visibly distinguishable. Include a `source_ref`.
@@ -40,7 +40,15 @@ Hard rules:
    - `summary`: 1 sentence.  - `answer`: at most 3 sentences.
    - `evidence`: at most 8 entries, each quote under 15 words.
    - `eligibility`, `venue`, `audience`: one line each.
-10. Do not reason out loud or explain yourself. Output ONLY the JSON object, no prose,
+10. Structured fields must contain the facts, not only your explanation:
+    - Put every stated deadline/date in `dates`: objects with label, value, iso_date, iso_end_date, source_ref.
+    - Put every stated amount in `fees`: objects with label, amount, currency, iso_date, source_ref.
+    - Put explicitly stated instructions in `action_items`: objects with step, detail, required, source_ref.
+    - Do not leave these arrays empty when those facts are stated, even if you also describe them in `summary` or `answer`.
+    - Use `contacts`, `links`, `missing`, and `evidence` with the exact schema field names.
+    - Name documents, e.g. "Student ID", rather than copying "Bring your student ID" as a document name.
+    - A synthetic/sample disclaimer must remain visible; explain its hypothetical instructions without implying an actual payment is owed.
+11. Do not reason out loud or explain yourself. Output ONLY the JSON object, no prose,
     no markdown fences, no comments.
 
 Output only the JSON object."""
@@ -54,7 +62,7 @@ Rules:
 - Each step's `detail` must be concrete: name the documents, the amount, the date, the office.
 - If the deadline is unknown, the registration step must say "confirm the deadline first".
 - `summary` is one plain-language sentence: what to do and by when.
-- Emit 4-7 steps total. Any step concerning an OPTIONAL document/activity must have
+- Do not add unsupported steps to reach a target count. Any step concerning an OPTIONAL document/activity must have
   `required: false`; everything a strict reviewer would reject you for skipping is required.
 - Quote dates and document names exactly as the notice states them; do not invent anything.
 - `detail` is at most 12 words. Do not reason out loud.

@@ -4,7 +4,10 @@ import unittest
 from unittest.mock import patch
 
 import document_ui as ui
-import app
+import importlib.util
+_spec = importlib.util.spec_from_file_location("noticebridge_ui", Path(__file__).resolve().parents[1] / "app.py")
+app = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(app)
 import ui_utils
 
 ROOT = Path(__file__).resolve().parents[1]

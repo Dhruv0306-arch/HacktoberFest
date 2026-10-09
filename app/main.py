@@ -1,6 +1,7 @@
 """Community Notice -> Action backend (FastAPI + local Ollama / gemma4:e4b)."""
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from contextlib import asynccontextmanager
@@ -11,7 +12,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from . import ollama_client as ollama
 from . import store
-from .config import ANALYSES_DIR, DATA_DIR, OLLAMA_HOST, OLLAMA_MODEL
+from .config import ANALYSES_DIR, DATA_DIR, OLLAMA_HOST, OLLAMA_MODEL, MAX_UPLOAD_BYTES
 from .ingest import IngestError
 from .schemas import Notice
 from .services import calendar as calendar_service
@@ -31,7 +32,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=os.environ.get("NOTICEBRIDGE_CORS_ORIGINS", "http://127.0.0.1:7860,http://localhost:7860").split(","),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -112,7 +113,10 @@ async def analyze(
     """
     question = (question or "").strip()
     if file is not None and file.filename:
-        data = await file.read()
+        data = await file.read(MAX_UPLOAD_BYTES + 1)
+        await file.close()
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise IngestError("Upload exceeds the configured file size limit.")
         record = await analyze_service.analyze_upload(
             file.filename, file.content_type or "", data, question
         )
@@ -146,8 +150,10 @@ async def correct_analysis(analysis_id: str, patch: Dict[str, Any] = Body(...)) 
 
     def apply(record: Dict[str, Any]) -> None:
         notice = record.setdefault("notice", {})
+        validated = Notice.model_validate({**notice, **patch}, strict=True).model_dump()
         changed = {}
-        for key, value in patch.items():
+        for key in patch:
+            value = validated[key]
             before = notice.get(key)
             if before != value:
                 changed[key] = {"before": before, "after": value}
@@ -196,7 +202,7 @@ async def download_checklist(analysis_id: str) -> Response:
     record = store.get(analysis_id)
     markdown = checklist_service.render_markdown(record)
     title = (record.get("notice", {}).get("title") or "notice")[:40]
-    slug = "".join(c if c.isalnum() or c in "- " else "" for c in title).strip().replace(" ", "-") or "notice"
+    slug = "".join(c if c.isascii() and (c.isalnum() or c in "- ") else "" for c in title).strip().replace(" ", "-") or "notice"
     return Response(
         content=markdown,
         media_type="text/markdown; charset=utf-8",
@@ -232,7 +238,10 @@ async def enrich(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 def _dates_for(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
     if payload.get("dates") is not None:
-        return list(payload["dates"])
+        if not isinstance(payload["dates"], list):
+            raise IngestError("dates must be a list")
+        from .schemas import DateInfo
+        return [DateInfo.model_validate(item, strict=True).model_dump() for item in payload["dates"]]
     if payload.get("analysis_id"):
         record = store.get(str(payload["analysis_id"]))
         return calendar_service.dates_from_notice(record.get("notice", {}), payload.get("indices"))
@@ -244,6 +253,9 @@ async def calendar_preview(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any
     """Show extracted dates for confirmation before any calendar file is created."""
     dates = _dates_for(payload)
     events, warnings = calendar_service.preview_events(dates)
+    title = str(payload.get("title") or (store.get(str(payload["analysis_id"])).get("notice", {}).get("title") if payload.get("analysis_id") else "") or "Notice deadlines")
+    for event in events:
+        event["title"] = title + " — " + event["label"] if title != event["label"] else title
     skipped = [
         {"label": date.get("label", ""), "value": date.get("value", "")}
         for date in dates
@@ -261,7 +273,7 @@ async def calendar_preview(payload: Dict[str, Any] = Body(...)) -> Dict[str, Any
 @app.post("/api/calendar/ics")
 async def calendar_ics(payload: Dict[str, Any] = Body(...)) -> Response:
     """Create the .ics file. Requires confirmed=true so dates are reviewed first."""
-    if not payload.get("confirmed"):
+    if payload.get("confirmed") is not True:
         raise CalendarError("dates must be confirmed first: call /api/calendar/preview, review, then resend with confirmed=true")
 
     dates = _dates_for(payload)
@@ -271,7 +283,7 @@ async def calendar_ics(payload: Dict[str, Any] = Body(...)) -> Response:
             "no usable dates: " + ("; ".join(warnings) if warnings else "the notice has no parseable dates")
         )
     title = str(payload.get("title") or "Notice deadlines")
-    ics = calendar_service.to_ics(events, title=title)
+    ics = calendar_service.to_ics(events, title=title, notes=str(payload.get("notes") or ""), event_namespace=str(payload.get("event_namespace") or payload.get("analysis_id") or ""))
     return Response(
         content=ics,
         media_type="text/calendar; charset=utf-8",
@@ -280,7 +292,7 @@ async def calendar_ics(payload: Dict[str, Any] = Body(...)) -> Response:
 
 
 def _slug(text: str) -> str:
-    slug = "".join(c if c.isalnum() or c in "- " else "" for c in text).strip().replace(" ", "-")
+    slug = "".join(c if c.isascii() and (c.isalnum() or c in "- ") else "" for c in text).strip().replace(" ", "-")
     return slug or "notice"
 
 
@@ -290,3 +302,8 @@ async def _startup() -> None:
     ANALYSES_DIR.mkdir(parents=True, exist_ok=True)
     state = await ollama.ping()
     log.info("ollama: %s (%s)", "ready" if state["ok"] else "NOT READY", state["detail"])
+
+
+@app.on_event("shutdown")
+async def _shutdown():
+    await ollama.close_client()

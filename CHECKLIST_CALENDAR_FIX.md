@@ -1,6 +1,6 @@
 # Checklist and calendar fixes
 
-Apply to the existing integrated NoticeBridge project on `dhruv-ui`. No branch switch, commit or push was performed.
+Apply to the existing integrated DeadLense project on `dhruv-ui`. No branch switch, commit or push was performed.
 
 ## Why Markdown was visible
 

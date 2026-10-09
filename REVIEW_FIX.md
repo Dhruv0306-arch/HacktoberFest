@@ -1,4 +1,4 @@
-# NoticeBridge review-screen fix
+# DeadLense review-screen fix
 
 Apply this update to the integrated project on `dhruv-ui`. It changes four production files:
 `model_ui.py`, `app/prompts.py`, `app/ollama_client.py`, and `app/services/analyze.py`.

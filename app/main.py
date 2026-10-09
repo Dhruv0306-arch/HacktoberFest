@@ -1,4 +1,4 @@
-"""Community Notice -> Action backend (FastAPI + local Ollama / gemma4:e4b)."""
+"""DeadLense backend (FastAPI + local Ollama / gemma4:e4b)."""
 
 import logging
 import os
@@ -25,14 +25,14 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname
 log = logging.getLogger("notice.backend")
 
 app = FastAPI(
-    title="Community Notice -> Action",
+    title="DeadLense",
     version="0.1.0",
     description="Backend that turns a poster / notice / PDF / screenshot into evidence-backed actions.",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("NOTICEBRIDGE_CORS_ORIGINS", "http://127.0.0.1:7860,http://localhost:7860").split(","),
+    allow_origins=os.environ.get("DEADLENSE_CORS_ORIGINS", os.environ.get("NOTICEBRIDGE_CORS_ORIGINS", "http://127.0.0.1:7860,http://localhost:7860")).split(","),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

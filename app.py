@@ -78,9 +78,9 @@ def switch_source(source):
             gr.Tabs(selected='upload'), note)
 
 
-with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
+with gr.Blocks(title='DeadLense', analytics_enabled=False) as demo:
     original = gr.State({})
-    gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">N</div><div><div class="brand-name">NoticeBridge</div><div class="brand-tag">Community information, made clear</div></div></div>')
+    gr.HTML('<div id="brand"><div class="mark" aria-hidden="true">D</div><div><div class="brand-name">DeadLense</div><div class="brand-tag">Community information, made clear</div></div></div>')
     gr.HTML('<div id="hero"><p class="eyebrow">READ · VERIFY · ACT</p><h1>Read your notice. Know what comes next.</h1><p class="subtitle">Upload a document, preview it, and review its text. Or explore a saved sample to see an example action plan.</p></div>')
     source = gr.Radio(['Your document', SAMPLE_SOURCE], value='Your document', label='Choose your starting point', elem_id='source-switch')
     source_note = gr.Markdown('**Your document** · Analyze a PDF, image or pasted text with your backend, review the facts, then generate your action plan.', elem_id='source-note')
@@ -149,7 +149,7 @@ with gr.Blocks(title='NoticeBridge', analytics_enabled=False) as demo:
                 gr.Markdown('Only entries matching your category and region appear. No match means no recommendation.', elem_classes=['quiet-note'])
     with gr.Group(visible=False) as sample_status:
         status = gr.Textbox(label='Sample workflow status' if MODE == 'demo' else 'Model workflow status', value='Choose a sample and click Read sample.' if MODE == 'demo' else 'Choose a notice to begin.', lines=2, interactive=False, elem_classes=['workflow-status'])
-    gr.Markdown('NoticeBridge · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
+    gr.Markdown('DeadLense · Review important dates and amounts before acting. Your document and sample walkthrough remain separate.', elem_id='footer-note')
     source.input(switch_source, source, [*reader['panels'], sample_upload, sample_review, sample_results, sample_status, navigation, source_note], queue=False)
     plan_outputs = [explanation, tasks, downloads, resources]
     extraction_outputs = [original, *editors, evidence, confirmed, date_checked, *plan_outputs, status]

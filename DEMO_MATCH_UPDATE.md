@@ -1,6 +1,6 @@
 # Read Document: match the demo experience
 
-This update applies to the existing integrated NoticeBridge project on `dhruv-ui`.
+This update applies to the existing integrated DeadLense project on `dhruv-ui`.
 
 ## Reference inspected
 

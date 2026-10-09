@@ -1,4 +1,4 @@
-# NoticeBridge integration report
+# DeadLense integration report
 
 ## Supplied source and architecture
 
@@ -77,7 +77,7 @@ $env:OLLAMA_MODEL = "gemma4:e4b"
 Terminal 2:
 
 ```powershell
-$env:NOTICEBRIDGE_API_URL = "http://127.0.0.1:8000"
+$env:DEADLENSE_API_URL = "http://127.0.0.1:8000"
 .\venv\Scripts\python.exe app.py
 ```
 

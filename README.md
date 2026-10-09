@@ -1,4 +1,4 @@
-# NoticeBridge
+# DeadLense
 
 Read it. Verify it. Act on it.
 
@@ -33,7 +33,7 @@ $env:OLLAMA_MODEL = "gemma4:e4b"
 Terminal 2 — frontend (from the same project folder):
 
 ```powershell
-$env:NOTICEBRIDGE_API_URL = "http://127.0.0.1:8000"
+$env:DEADLENSE_API_URL = "http://127.0.0.1:8000"
 .\venv\Scripts\python.exe app.py
 ```
 
@@ -58,7 +58,7 @@ Edits and replacements invalidate previous results and late model responses. Mod
 
 ## Demo mode remains available
 
-Choose **Demo sample** to use `samples/demo_notice.json` and the clean/unclear synthetic images. This workflow is English-only and produces labelled demo files. It never runs automatically when real processing fails. The legacy `NOTICEBRIDGE_MODE` variable no longer controls real inference: real processing always uses **Your document**, and samples always remain samples.
+Choose **Demo sample** to use `samples/demo_notice.json` and the clean/unclear synthetic images. This workflow is English-only and produces labelled demo files. It never runs automatically when real processing fails. The legacy `DEADLENSE_MODE` variable no longer controls real inference: real processing always uses **Your document**, and samples always remain samples.
 
 ## Local OCR (optional)
 
@@ -78,13 +78,13 @@ Environment variables are read by the relevant Python process. `.env.example` do
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `NOTICEBRIDGE_API_URL` | `http://127.0.0.1:8000` | Frontend's backend address |
-| `NOTICEBRIDGE_API_TIMEOUT` | `900` seconds | Frontend HTTP read timeout |
+| `DEADLENSE_API_URL` | `http://127.0.0.1:8000` | Frontend's backend address |
+| `DEADLENSE_API_TIMEOUT` | `900` seconds | Frontend HTTP read timeout |
 | `OLLAMA_HOST` | `http://127.0.0.1:11434` | Backend model server |
 | `OLLAMA_MODEL` | `gemma4:e4b` | Exact installed model tag |
 | `OLLAMA_TIMEOUT` | See `app/config.py` | Backend inference timeout; retain supplied defaults unless needed |
 | `APP_DATA_DIR` | `data/` | Backend directory and saved analysis location |
-| `NOTICEBRIDGE_CORS_ORIGINS` | localhost ports 7860 | Comma-separated allowed browser origins |
+| `DEADLENSE_CORS_ORIGINS` | localhost ports 7860 | Comma-separated allowed browser origins |
 
 Gradio makes server-side HTTP requests, so its integration does not need browser cross-origin requests. Both services bind to loopback in the commands above. Documents are not sent to an external OCR service. Changing either host to a remote service changes where content is sent; configure this deliberately.
 
@@ -113,3 +113,5 @@ API contracts and the integration changes are documented in `API.md` and `INTEGR
 Integration tests start a real FastAPI HTTP server and replace **only model inference** with explicit test fixtures. The smoke test starts the real Gradio UI and drives its upload/review/confirmation/download APIs over HTTP. Test fixtures never enter production request handling. Existing reader tests exercise real Tesseract OCR when installed.
 
 Live Gemma inference, Hindi output quality, and a visual browser inspection were not verified in the integration environment. No Ollama instance was listening there. Test one real notice on your laptop before presenting the demo. Human review reduces errors but does not establish model accuracy; unresolved details remain visible rather than becoming invented deadlines or contacts.
+
+Existing `NOTICEBRIDGE_*` environment settings remain supported for compatibility. When both names are set, `DEADLENSE_*` takes precedence.

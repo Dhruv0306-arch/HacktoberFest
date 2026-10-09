@@ -134,7 +134,7 @@ are bounded before inference. No changes were made to the successful response sc
 Calendar export now requires JSON boolean `true`, rejects impossible dates, and uses the next
 calendar day as the exclusive end for single-day events. Download filenames are ASCII-safe,
 including when a Hindi notice title is supplied. CORS defaults to local UI origins and is
-configurable through `NOTICEBRIDGE_CORS_ORIGINS`.
+configurable through `DEADLENSE_CORS_ORIGINS`.
 
 The supplied `data/directory.json` is fictional demo campus data. Its timestamps are supplied
 metadata, not independent verification. Hindi is requested through existing prompt fields;

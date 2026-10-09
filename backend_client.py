@@ -9,8 +9,8 @@ from pydantic import ValidationError
 from app.schemas import Notice, Checklist
 from presentation_utils import markdown_checklist, plain_markdown
 
-API_URL = os.environ.get('NOTICEBRIDGE_API_URL', 'http://127.0.0.1:8000').rstrip('/')
-API_TIMEOUT = float(os.environ.get('NOTICEBRIDGE_API_TIMEOUT', '900'))
+API_URL = os.environ.get('DEADLENSE_API_URL', os.environ.get('NOTICEBRIDGE_API_URL', 'http://127.0.0.1:8000')).rstrip('/')
+API_TIMEOUT = float(os.environ.get('DEADLENSE_API_TIMEOUT', os.environ.get('NOTICEBRIDGE_API_TIMEOUT', '900')))
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TEXT = 90000
 EXTENSIONS = {'.pdf', '.png', '.jpg', '.jpeg', '.webp', '.bmp', '.tif', '.tiff', '.gif', '.txt'}

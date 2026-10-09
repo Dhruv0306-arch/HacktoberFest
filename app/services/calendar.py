@@ -113,7 +113,7 @@ def to_ics(events: List[Dict[str, Any]], title: str = "Notice deadlines", notes:
     lines = [
         "BEGIN:VCALENDAR",
         "VERSION:2.0",
-        "PRODID:-//Community Notice to Action//EN",
+        "PRODID:-//DeadLense//EN",
         "CALSCALE:GREGORIAN",
         "METHOD:PUBLISH",
     ]

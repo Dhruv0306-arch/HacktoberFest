@@ -20,7 +20,7 @@ IntegrationTests.setUpClass()
 ui = None
 try:
     with patch('model_ui.BackendClient', return_value=IntegrationTests.client):
-        spec = importlib.util.spec_from_file_location('noticebridge_smoke_ui', ROOT / 'app.py')
+        spec = importlib.util.spec_from_file_location('deadlense_smoke_ui', ROOT / 'app.py')
         ui = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(ui)
     ui.demo.queue().launch(server_name='127.0.0.1', server_port=7867, inbrowser=False,

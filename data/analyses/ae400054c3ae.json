@@ -1,0 +1,232 @@
+{
+  "source": {
+    "kind": "image",
+    "filename": "notice.png",
+    "pages": 1,
+    "chars": 0,
+    "images": 1,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "What is the last date to apply?",
+  "notice": {
+    "title": "ST. XAVIER'S COLLEGE (AUTONOMOUS) MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+    "notice_type": "scholarship",
+    "issuing_body": "ST. XAVIER'S COLLEGE (AUTONOMOUS)",
+    "summary": "This notice announces the Merit-Cum-Means Scholarship for the 2026-27 academic year, detailing eligibility, required documents, and application procedures.",
+    "audience": "Enrolled students for the Merit-cum-Means Scholarship for the academic year 2026-27",
+    "dates": [
+      {
+        "label": "Notice Date",
+        "value": "3 October 2026",
+        "iso_date": "2026-10-03",
+        "iso_end_date": "",
+        "source_ref": "image"
+      },
+      {
+        "label": "Application Deadline",
+        "value": "15 November 2026, 4:00 PM",
+        "iso_date": "2026-11-15",
+        "iso_end_date": "",
+        "source_ref": "image"
+      }
+    ],
+    "venue": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+    "eligibility": "Minimum 75% aggregate in the last completed examination",
+    "required_documents": [
+      "Mark sheet of the last examination",
+      "Income certificate / ITR of guardian",
+      "Caste certificate, if applicable"
+    ],
+    "optional_documents": [
+      "Sports / NCC certificate (for extra weightage)"
+    ],
+    "fees": [],
+    "contacts": [
+      {
+        "name": "Scholarship Office",
+        "role": "Contact",
+        "phone": "+91 22 5550 0101",
+        "email": "scholarships@example.edu",
+        "source_ref": "image"
+      }
+    ],
+    "links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "action_items": [
+      {
+        "step": "Check eligibility criteria",
+        "detail": "Must have 75% aggregate in last exam.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "step": "Collect required documents",
+        "detail": "Gather mark sheet, income cert, caste cert.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "step": "Submit form by deadline",
+        "detail": "Submit to Scholarship Office by 15 Nov 2026.",
+        "required": true,
+        "source_ref": "image"
+      }
+    ],
+    "evidence": [
+      {
+        "field": "Title",
+        "quote": "ST. XAVIER'S COLLEGE (AUTONOMOUS) MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+        "source_ref": "image"
+      },
+      {
+        "field": "Eligibility",
+        "quote": "Minimum 75% aggregate in the last completed examination",
+        "source_ref": "image"
+      },
+      {
+        "field": "Required Docs",
+        "quote": "Mark sheet of the last examination [REQUIRED]",
+        "source_ref": "image"
+      },
+      {
+        "field": "Required Docs",
+        "quote": "Income certificate / ITR of guardian [REQUIRED]",
+        "source_ref": "image"
+      },
+      {
+        "field": "Required Docs",
+        "quote": "Caste certificate, if applicable [REQUIRED]",
+        "source_ref": "image"
+      },
+      {
+        "field": "Deadline",
+        "quote": "on or before 15 November 2026, 4:00 PM.",
+        "source_ref": "image"
+      },
+      {
+        "field": "Venue",
+        "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+        "source_ref": "image"
+      },
+      {
+        "field": "Contact",
+        "quote": "Phone: +91 22 5550 0101",
+        "source_ref": "image"
+      }
+    ],
+    "missing": [
+      {
+        "field": "Fees",
+        "issue": "absent",
+        "note": "The notice mentions 'Application processing fee: Rs. 100 (non-refundable)' but does not list it under a dedicated fee section."
+      }
+    ],
+    "needs_clearer_image": false,
+    "answer": "The last date to apply for the Merit-Cum-Means Scholarship is November 15, 2026, at 4:00 PM. Applications must be submitted to the Scholarship Office located in Admin Block, Room 12. You can also register online via the provided link."
+  },
+  "checklist": {
+    "summary": "This notice announces the Merit-Cum-Means Scholarship for the 2026-27 academic year, detailing eligibility, required documents, and application procedures.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Check eligibility criteria",
+        "detail": "Must have 75% aggregate in last exam.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 2,
+        "step": "Collect required documents",
+        "detail": "Gather mark sheet, income cert, caste cert.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 3,
+        "step": "Submit form by deadline",
+        "detail": "Submit to Scholarship Office by 15 Nov 2026.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 4,
+        "step": "Submit optional documents",
+        "detail": "Sports / NCC certificate (for extra weightage)",
+        "required": false,
+        "source_ref": ""
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "Title",
+      "quote": "ST. XAVIER'S COLLEGE (AUTONOMOUS) MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Eligibility",
+      "quote": "Minimum 75% aggregate in the last completed examination",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Required Docs",
+      "quote": "Mark sheet of the last examination [REQUIRED]",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Required Docs",
+      "quote": "Income certificate / ITR of guardian [REQUIRED]",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Required Docs",
+      "quote": "Caste certificate, if applicable [REQUIRED]",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Deadline",
+      "quote": "on or before 15 November 2026, 4:00 PM.",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Venue",
+      "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+      "source_ref": "image",
+      "verified": null
+    },
+    {
+      "field": "Contact",
+      "quote": "Phone: +91 22 5550 0101",
+      "source_ref": "image",
+      "verified": null
+    }
+  ],
+  "id": "ae400054c3ae",
+  "created_at": "2026-10-09T11:39:04+0530",
+  "corrections": [],
+  "updated_at": "2026-10-09T11:39:04+0530",
+  "actions": {
+    "registration_url": "https://example.edu/scholarship/apply",
+    "all_links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "download_checklist": "/api/analyses/ae400054c3ae/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  }
+}

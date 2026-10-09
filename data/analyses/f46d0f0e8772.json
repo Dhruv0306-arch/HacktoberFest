@@ -1,0 +1,264 @@
+{
+  "source": {
+    "kind": "text",
+    "filename": "pasted text",
+    "pages": 1,
+    "chars": 1103,
+    "images": 0,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "",
+  "notice": {
+    "title": "MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+    "notice_type": "scholarship",
+    "issuing_body": "ST. XAVIER'S COLLEGE (AUTONOMOUS)",
+    "summary": "Applications are open for the Merit-cum-Means Scholarship for the 2026-27 academic year, targeting enrolled students who meet specific academic and financial criteria.",
+    "audience": "Enrolled students of St. Xavier's College",
+    "dates": [
+      {
+        "label": "Notice Date",
+        "value": "3 October 2026",
+        "iso_date": "2026-10-03",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      },
+      {
+        "label": "Application Deadline",
+        "value": "15 November 2026, 4:00 PM",
+        "iso_date": "2026-11-15",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "venue": "Admin Block, Room 12 (counter 3)",
+    "eligibility": "Minimum 75% aggregate in last exam, income < Rs. 8,00,000, 75% attendance.",
+    "required_documents": [
+      "Mark sheet of the last examination",
+      "Income certificate / ITR of guardian",
+      "Caste certificate, if applicable"
+    ],
+    "optional_documents": [
+      "Sports / NCC certificate (for extra weightage)"
+    ],
+    "fees": [
+      {
+        "label": "Application processing fee",
+        "amount": "Rs. 100",
+        "currency": "INR",
+        "iso_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "contacts": [
+      {
+        "name": "Scholarship Office",
+        "role": "Contact",
+        "phone": "+91 22 5550 0101",
+        "email": "scholarships@example.edu",
+        "source_ref": "pasted text"
+      }
+    ],
+    "links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "action_items": [
+      {
+        "step": "Check eligibility criteria",
+        "detail": "Ensure 75% aggregate, income < Rs. 8,00,000, and 75% attendance.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Gather required documents",
+        "detail": "Collect mark sheet, income certificate, and caste certificate.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Pay application fee",
+        "detail": "Pay non-refundable fee of Rs. 100 online.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Submit application before deadline",
+        "detail": "Submit form and documents by 15 November 2026, 4:00 PM.",
+        "required": true,
+        "source_ref": "pasted text"
+      }
+    ],
+    "evidence": [
+      {
+        "field": "Title",
+        "quote": "MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Eligibility 1",
+        "quote": "Minimum 75% aggregate in the last completed examination",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Eligibility 2",
+        "quote": "Family annual income below Rs. 8,00,000",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Required Doc 1",
+        "quote": "Mark sheet of the last examination [REQUIRED]",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Required Doc 2",
+        "quote": "Income certificate / ITR of guardian [REQUIRED]",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Fee",
+        "quote": "Application processing fee: Rs. 100 (non-refundable)",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Deadline",
+        "quote": "on or before 15 November 2026, 4:00 PM",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Submission Location",
+        "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+        "source_ref": "pasted text"
+      }
+    ],
+    "missing": [
+      {
+        "field": "Contact",
+        "issue": "absent",
+        "note": "Only office phone/email provided, not a specific person's contact."
+      }
+    ],
+    "needs_clearer_image": false,
+    "answer": "This notice announces the Merit-cum-Means Scholarship for the 2026-27 academic year, which is open to enrolled students at St. Xavier's College. To be eligible, applicants must maintain a minimum 75% aggregate, have a family income under Rs. 8,00,000, and maintain 75% attendance. Interested students must submit their completed form and required documents to the Scholarship Office by November 15, 2026, at 4:00 PM."
+  },
+  "checklist": {
+    "summary": "Verify eligibility, gather required documents, pay the Rs. 100 fee, and submit the application by 15 November 2026, 4:00 PM.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Check eligibility criteria",
+        "detail": "Ensure 75% aggregate, income < Rs. 8,00,000, and 75% attendance.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 2,
+        "step": "Gather required documents",
+        "detail": "Collect Mark sheet of the last examination, Income certificate / ITR, and Caste certificate.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 3,
+        "step": "Gather optional documents",
+        "detail": "Collect Sports / NCC certificate for extra weightage.",
+        "required": false,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 4,
+        "step": "Pay application fee",
+        "detail": "Pay non-refundable fee of Rs. 100 online.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 5,
+        "step": "Submit application before deadline",
+        "detail": "Submit form and documents by 15 November 2026, 4:00 PM at Admin Block, Room 12.",
+        "required": true,
+        "source_ref": "pasted text"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "Title",
+      "quote": "MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Eligibility 1",
+      "quote": "Minimum 75% aggregate in the last completed examination",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Eligibility 2",
+      "quote": "Family annual income below Rs. 8,00,000",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Required Doc 1",
+      "quote": "Mark sheet of the last examination [REQUIRED]",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Required Doc 2",
+      "quote": "Income certificate / ITR of guardian [REQUIRED]",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Fee",
+      "quote": "Application processing fee: Rs. 100 (non-refundable)",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Deadline",
+      "quote": "on or before 15 November 2026, 4:00 PM",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Submission Location",
+      "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+      "source_ref": "pasted text",
+      "verified": true
+    }
+  ],
+  "id": "f46d0f0e8772",
+  "created_at": "2026-10-09T11:32:33+0530",
+  "corrections": [
+    {
+      "at": "2026-10-09T11:32:33+0530",
+      "changed": {
+        "venue": {
+          "before": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+          "after": "Admin Block, Room 12 (counter 3)"
+        }
+      }
+    }
+  ],
+  "updated_at": "2026-10-09T11:43:20+0530",
+  "actions": {
+    "registration_url": "https://example.edu/scholarship/apply",
+    "all_links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "download_checklist": "/api/analyses/f46d0f0e8772/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  },
+  "checklist_stale": false
+}

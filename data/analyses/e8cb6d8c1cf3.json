@@ -1,0 +1,152 @@
+{
+  "source": {
+    "kind": "text",
+    "filename": "pasted text",
+    "pages": 1,
+    "chars": 135,
+    "images": 0,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "By when and where?",
+  "notice": {
+    "title": "Hostel room allotment",
+    "notice_type": "other",
+    "issuing_body": "N/A",
+    "summary": "The deadline for hostel room allotment is October 20, 2026, and applications must be submitted at the Hostel Office in Block A.",
+    "audience": "Individuals applying for hostel rooms",
+    "dates": [
+      {
+        "label": "Closing Date",
+        "value": "20 Oct 2026",
+        "iso_date": "2026-10-20",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "venue": "Hostel Office, Block A, counter 2",
+    "eligibility": "Not specified",
+    "required_documents": [],
+    "optional_documents": [
+      "Sports quota certificates"
+    ],
+    "fees": [
+      {
+        "label": "Application Fee",
+        "amount": "Rs. 500",
+        "currency": "Rs.",
+        "iso_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "contacts": [],
+    "links": [],
+    "action_items": [
+      {
+        "step": "Apply for hostel room allotment",
+        "detail": "Submit application before the deadline.",
+        "required": true,
+        "source_ref": "pasted text"
+      }
+    ],
+    "evidence": [
+      {
+        "field": "Deadline",
+        "quote": "Hostel room allotment closes 20 Oct 2026.",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Venue",
+        "quote": "Apply at Hostel Office, Block A.",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Fee",
+        "quote": "Fee Rs. 500.",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Optional Docs",
+        "quote": "Sports quota certificates are optional.",
+        "source_ref": "pasted text"
+      }
+    ],
+    "missing": [
+      {
+        "field": "Eligibility",
+        "issue": "absent",
+        "note": "No specific eligibility criteria were provided in the notice."
+      }
+    ],
+    "needs_clearer_image": false,
+    "answer": "The hostel room allotment closes on October 20, 2026. You must apply at the Hostel Office, which is located in Block A. The application fee for this process is Rs. 500."
+  },
+  "checklist": {
+    "summary": "The deadline for hostel room allotment is October 20, 2026, and applications must be submitted at the Hostel Office in Block A.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Apply for hostel room allotment",
+        "detail": "Submit application before the deadline.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 2,
+        "step": "Submit optional documents",
+        "detail": "Sports quota certificates",
+        "required": false,
+        "source_ref": ""
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "Deadline",
+      "quote": "Hostel room allotment closes 20 Oct 2026.",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Venue",
+      "quote": "Apply at Hostel Office, Block A.",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Fee",
+      "quote": "Fee Rs. 500.",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Optional Docs",
+      "quote": "Sports quota certificates are optional.",
+      "source_ref": "pasted text",
+      "verified": true
+    }
+  ],
+  "id": "e8cb6d8c1cf3",
+  "created_at": "2026-10-09T12:23:56+0530",
+  "corrections": [
+    {
+      "at": "2026-10-09T12:23:56+0530",
+      "changed": {
+        "venue": {
+          "before": "Hostel Office, Block A",
+          "after": "Hostel Office, Block A, counter 2"
+        }
+      }
+    }
+  ],
+  "updated_at": "2026-10-09T12:28:27+0530",
+  "actions": {
+    "registration_url": "",
+    "all_links": [],
+    "download_checklist": "/api/analyses/e8cb6d8c1cf3/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  },
+  "checklist_stale": true
+}

@@ -1,0 +1,137 @@
+{
+  "source": {
+    "kind": "text",
+    "filename": "pasted text",
+    "pages": 1,
+    "chars": 59,
+    "images": 0,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "",
+  "notice": {
+    "title": "Fun fest",
+    "notice_type": "event",
+    "issuing_body": "",
+    "summary": "A Fun Fest event is scheduled to take place on the 12th at the Main ground.",
+    "audience": "General public",
+    "dates": [
+      {
+        "label": "Event Date",
+        "value": "12th",
+        "iso_date": "",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "venue": "Main ground",
+    "eligibility": "",
+    "required_documents": [],
+    "optional_documents": [],
+    "fees": [],
+    "contacts": [
+      {
+        "name": "",
+        "role": "Contact",
+        "phone": "98765",
+        "email": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "links": [],
+    "action_items": [
+      {
+        "step": "Attend the Fun Fest",
+        "detail": "The event will take place on the 12th.",
+        "required": false,
+        "source_ref": "pasted text"
+      }
+    ],
+    "evidence": [
+      {
+        "field": "title",
+        "quote": "Fun fest",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "dates",
+        "quote": "Fun fest on 12th.",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "venue",
+        "quote": "Venue: Main ground.",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "contacts",
+        "quote": "Contact 98765.",
+        "source_ref": "pasted text"
+      }
+    ],
+    "missing": [
+      {
+        "field": "full_date",
+        "issue": "unclear",
+        "note": "The year and month for the 12th are not specified."
+      },
+      {
+        "field": "fees",
+        "issue": "absent",
+        "note": "No fee information is provided for the event."
+      }
+    ],
+    "needs_clearer_image": false,
+    "answer": "This notice announces a Fun Fest event scheduled for the 12th at the Main ground. It is intended for anyone interested in attending the fest. For more information, you can contact the provided number, 98765."
+  },
+  "checklist": {
+    "summary": "A Fun Fest event is scheduled to take place on the 12th at the Main ground.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Attend the Fun Fest",
+        "detail": "The event will take place on the 12th.",
+        "required": false,
+        "source_ref": "pasted text"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "title",
+      "quote": "Fun fest",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "dates",
+      "quote": "Fun fest on 12th.",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "venue",
+      "quote": "Venue: Main ground.",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "contacts",
+      "quote": "Contact 98765.",
+      "source_ref": "pasted text",
+      "verified": true
+    }
+  ],
+  "id": "677458187305",
+  "created_at": "2026-10-09T12:04:38+0530",
+  "corrections": [],
+  "updated_at": "2026-10-09T12:04:38+0530",
+  "actions": {
+    "registration_url": "",
+    "all_links": [],
+    "download_checklist": "/api/analyses/677458187305/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  }
+}

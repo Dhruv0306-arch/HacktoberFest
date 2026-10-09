@@ -1,0 +1,231 @@
+{
+  "source": {
+    "kind": "text",
+    "filename": "pasted text",
+    "pages": 1,
+    "chars": 1103,
+    "images": 0,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "Where do I submit and by when?",
+  "notice": {
+    "title": "MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+    "notice_type": "scholarship",
+    "issuing_body": "ST. XAVIER'S COLLEGE (AUTONOMOUS)",
+    "summary": "Applications are open for the Merit-cum-Means Scholarship for the 2026-27 academic year, requiring specific documentation and submission by a set deadline.",
+    "audience": "enrolled students",
+    "dates": [
+      {
+        "label": "Notice Date",
+        "value": "3 October 2026",
+        "iso_date": "2026-10-03",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      },
+      {
+        "label": "Application Deadline",
+        "value": "15 November 2026, 4:00 PM",
+        "iso_date": "2026-11-15",
+        "iso_end_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "venue": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+    "eligibility": "Minimum 75% aggregate in last exam, income < Rs. 8,00,000, 75% attendance.",
+    "required_documents": [
+      "Mark sheet of the last examination",
+      "Income certificate / ITR of guardian",
+      "Caste certificate, if applicable"
+    ],
+    "optional_documents": [
+      "Sports / NCC certificate (for extra weightage)"
+    ],
+    "fees": [
+      {
+        "label": "Application processing fee",
+        "amount": "Rs. 100",
+        "currency": "Rs.",
+        "iso_date": "",
+        "source_ref": "pasted text"
+      }
+    ],
+    "contacts": [
+      {
+        "name": "Scholarship Office",
+        "role": "Office",
+        "phone": "+91 22 5550 0101",
+        "email": "scholarships@example.edu",
+        "source_ref": "pasted text"
+      }
+    ],
+    "links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "action_items": [
+      {
+        "step": "Check eligibility criteria",
+        "detail": "Ensure minimum 75% aggregate and income below Rs. 8,00,000.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Collect required documents",
+        "detail": "Gather mark sheet, income certificate, and caste certificate.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Pay application fee",
+        "detail": "Pay non-refundable fee of Rs. 100 online.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "step": "Submit form by deadline",
+        "detail": "Submit to SCHOLARSHIP OFFICE by 15 November 2026.",
+        "required": true,
+        "source_ref": "pasted text"
+      }
+    ],
+    "evidence": [
+      {
+        "field": "Application Deadline",
+        "quote": "on or before 15 November 2026, 4:00 PM",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Submission Location",
+        "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Required Document 1",
+        "quote": "Mark sheet of the last examination [REQUIRED]",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Required Document 2",
+        "quote": "Income certificate / ITR of guardian [REQUIRED]",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Fee Amount",
+        "quote": "Application processing fee: Rs. 100 (non-refundable)",
+        "source_ref": "pasted text"
+      },
+      {
+        "field": "Online Link",
+        "quote": "https://example.edu/scholarship/apply",
+        "source_ref": "pasted text"
+      }
+    ],
+    "missing": [
+      {
+        "field": "Contact Email",
+        "issue": "absent",
+        "note": "Email is present in the notice."
+      }
+    ],
+    "needs_clearer_image": false,
+    "answer": "You must submit the completed form and required documents to the SCHOLARSHIP OFFICE, located in Admin Block, Room 12. The final deadline for submission is 15 November 2026, at 4:00 PM. You can also register online via the provided link."
+  },
+  "checklist": {
+    "summary": "Applications are open for the Merit-cum-Means Scholarship for the 2026-27 academic year, requiring specific documentation and submission by a set deadline.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Check eligibility criteria",
+        "detail": "Ensure minimum 75% aggregate and income below Rs. 8,00,000.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 2,
+        "step": "Collect required documents",
+        "detail": "Gather mark sheet, income certificate, and caste certificate.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 3,
+        "step": "Pay application fee",
+        "detail": "Pay non-refundable fee of Rs. 100 online.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 4,
+        "step": "Submit form by deadline",
+        "detail": "Submit to SCHOLARSHIP OFFICE by 15 November 2026.",
+        "required": true,
+        "source_ref": "pasted text"
+      },
+      {
+        "order": 5,
+        "step": "Submit optional documents",
+        "detail": "Sports / NCC certificate (for extra weightage)",
+        "required": false,
+        "source_ref": ""
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "field": "Application Deadline",
+      "quote": "on or before 15 November 2026, 4:00 PM",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Submission Location",
+      "quote": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Required Document 1",
+      "quote": "Mark sheet of the last examination [REQUIRED]",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Required Document 2",
+      "quote": "Income certificate / ITR of guardian [REQUIRED]",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Fee Amount",
+      "quote": "Application processing fee: Rs. 100 (non-refundable)",
+      "source_ref": "pasted text",
+      "verified": true
+    },
+    {
+      "field": "Online Link",
+      "quote": "https://example.edu/scholarship/apply",
+      "source_ref": "pasted text",
+      "verified": true
+    }
+  ],
+  "id": "2414b9a09146",
+  "created_at": "2026-10-09T11:35:12+0530",
+  "corrections": [],
+  "updated_at": "2026-10-09T11:35:12+0530",
+  "actions": {
+    "registration_url": "https://example.edu/scholarship/apply",
+    "all_links": [
+      {
+        "label": "Online registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "download_checklist": "/api/analyses/2414b9a09146/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "source": {
+    "kind": "image",
+    "filename": "notice.png",
+    "pages": 1,
+    "chars": 0,
+    "images": 1,
+    "scanned": false,
+    "truncated": false
+  },
+  "question": "What is the last date to apply?",
+  "notice": {
+    "title": "MERIT-CUM-MEANS SCHOLARSHIP 2026-27",
+    "notice_type": "scholarship",
+    "issuing_body": "ST. XAVIER'S COLLEGE (AUTONOMOUS)",
+    "summary": "This notice announces the Merit-Cum-Means Scholarship for the 2026-27 academic year. Eligible students must meet academic, income, and attendance criteria. Applications must be submitted to the Scholarship Office by November 15, 2026, at 4:00 PM, or registered online.",
+    "audience": "Enrolled students",
+    "dates": [
+      {
+        "label": "Notice Date",
+        "value": "3 October 2026",
+        "iso_date": "2026-10-03",
+        "iso_end_date": "",
+        "source_ref": "image"
+      },
+      {
+        "label": "Application Deadline",
+        "value": "15 November 2026, 4:00 PM",
+        "iso_date": "2026-11-15",
+        "iso_end_date": "",
+        "source_ref": "image"
+      }
+    ],
+    "venue": "SCHOLARSHIP OFFICE, Admin Block, Room 12",
+    "eligibility": "Minimum 75% aggregate in the last completed examination; Family annual income below Rs. 8,00,000; Minimum 75% attendance in the current semester",
+    "required_documents": [
+      "Mark sheet of the last examination",
+      "Income certificate / ITR of guardian",
+      "Caste certificate, if applicable"
+    ],
+    "optional_documents": [
+      "Sports / NCC certificate (for extra weightage)"
+    ],
+    "fees": [
+      {
+        "label": "Application Processing Fee",
+        "amount": "Rs. 100",
+        "currency": "Rs.",
+        "iso_date": "",
+        "source_ref": "image"
+      }
+    ],
+    "contacts": [
+      {
+        "name": "Scholarship Office",
+        "role": "Office Location",
+        "phone": "+91 22 5550 0101",
+        "email": "scholarships@example.edu",
+        "source_ref": "image"
+      }
+    ],
+    "links": [
+      {
+        "label": "Online Registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "action_items": [
+      {
+        "step": "Check eligibility criteria (academic, income, and attendance)",
+        "detail": "Minimum 75% aggregate in the last completed examination, family annual income below Rs. 8,00,000, and minimum 75% attendance in the current semester.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "step": "Collect required documents",
+        "detail": "Mark sheet, Income certificate/ITR, and Caste certificate (if applicable).",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "step": "Pay application processing fee",
+        "detail": "The fee is Rs. 100 (non-refundable) and must be paid online.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "step": "Submit application or register online",
+        "detail": "Submit the completed form to the Scholarship Office or register online before 15 November 2026, 4:00 PM.",
+        "required": true,
+        "source_ref": "image"
+      }
+    ],
+    "evidence": [],
+    "missing": [],
+    "needs_clearer_image": false,
+    "answer": "The last date to apply for the Merit-Cum-Means Scholarship 2026-27 is November 15, 2026, at 4:00 PM. Applicants must submit the completed form with all required documents to the Scholarship Office, Admin Block, Room 12, or register online using the provided link. To be eligible, students must maintain a minimum 75% aggregate in their last examination and ensure their family's annual income is below Rs. 8,00,000."
+  },
+  "checklist": {
+    "summary": "This notice announces the Merit-Cum-Means Scholarship for the 2026-27 academic year. Eligible students must meet academic, income, and attendance criteria. Applications must be submitted to the Scholarship Office by November 15, 2026, at 4:00 PM, or registered online.",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Check eligibility criteria (academic, income, and attendance)",
+        "detail": "Minimum 75% aggregate in the last completed examination, family annual income below Rs. 8,00,000, and minimum 75% attendance in the current semester.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 2,
+        "step": "Collect required documents",
+        "detail": "Mark sheet, Income certificate/ITR, and Caste certificate (if applicable).",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 3,
+        "step": "Pay application processing fee",
+        "detail": "The fee is Rs. 100 (non-refundable) and must be paid online.",
+        "required": true,
+        "source_ref": "image"
+      },
+      {
+        "order": 4,
+        "step": "Submit application or register online",
+        "detail": "Submit the completed form to the Scholarship Office or register online before 15 November 2026, 4:00 PM.",
+        "required": true,
+        "source_ref": "image"
+      }
+    ]
+  },
+  "evidence": [],
+  "id": "e329c8d5e2b5",
+  "created_at": "2026-10-09T11:11:58+0530",
+  "corrections": [],
+  "updated_at": "2026-10-09T11:11:58+0530",
+  "actions": {
+    "registration_url": "https://example.edu/scholarship/apply",
+    "all_links": [
+      {
+        "label": "Online Registration",
+        "url": "https://example.edu/scholarship/apply"
+      }
+    ],
+    "download_checklist": "/api/analyses/e329c8d5e2b5/checklist.md",
+    "calendar_preview": "/api/calendar/preview",
+    "calendar_ics": "/api/calendar/ics",
+    "enrich": "/api/enrich"
+  }
+}
